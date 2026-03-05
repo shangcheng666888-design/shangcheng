@@ -85,57 +85,82 @@ const AdminUsers: React.FC = () => {
     }
   }
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams()
-      params.set('page', String(page))
-      params.set('pageSize', String(PAGE_SIZE_NUMBER))
-      if (statusFilter !== 'all') params.set('status', statusFilter)
-      if (search.trim()) params.set('search', search.trim())
-      const res = await api.get<{ list: Array<{ id: string; account: string; balance: number; shopId: string | null; isBot: boolean; createdAt: string; status: 'normal' | 'disabled' }>; total: number }>(`/api/users?${params.toString()}`)
-      const list = (res.list ?? []).map((u) => ({
-        id: u.id,
-        loginAccount: u.account,
-        loginPassword: undefined,
-        tradePassword: undefined,
-        balance: u.balance ?? 0,
-        isBot: !!u.isBot,
-        hasShop: !!u.shopId,
-        shopId: u.shopId ?? undefined,
-        avatar: null,
-        registeredAt: formatTime((u as any).createdAt ?? ''),
-        status: (u.status ?? 'normal') as UserStatus,
-        addresses: [],
-      }))
-      setUsers(list)
-      setTotal(res.total ?? list.length)
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : '加载用户列表失败', 'error')
-      setUsers([])
-      setTotal(0)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, PAGE_SIZE_NUMBER, search, statusFilter, showToast])
+  const fetchUsers = useCallback(
+    async (mode: 'normal' | 'silent' = 'normal') => {
+      if (mode === 'normal') setLoading(true)
+      try {
+        const params = new URLSearchParams()
+        params.set('page', String(page))
+        params.set('pageSize', String(PAGE_SIZE_NUMBER))
+        if (statusFilter !== 'all') params.set('status', statusFilter)
+        if (search.trim()) params.set('search', search.trim())
+        const res = await api.get<{
+          list: Array<{
+            id: string
+            account: string
+            balance: number
+            shopId: string | null
+            isBot: boolean
+            createdAt: string
+            status: 'normal' | 'disabled'
+          }>
+          total: number
+        }>(`/api/users?${params.toString()}`)
+        const list = (res.list ?? []).map((u) => ({
+          id: u.id,
+          loginAccount: u.account,
+          loginPassword: undefined,
+          tradePassword: undefined,
+          balance: u.balance ?? 0,
+          isBot: !!u.isBot,
+          hasShop: !!u.shopId,
+          shopId: u.shopId ?? undefined,
+          avatar: null,
+          registeredAt: formatTime((u as any).createdAt ?? ''),
+          status: (u.status ?? 'normal') as UserStatus,
+          addresses: [],
+        }))
+        setUsers(list)
+        setTotal(res.total ?? list.length)
+      } catch (e) {
+        if (mode === 'normal') {
+          showToast(e instanceof Error ? e.message : '加载用户列表失败', 'error')
+          setUsers([])
+          setTotal(0)
+        }
+        // 静默轮询出错时不打断当前界面，也不打扰用户
+      } finally {
+        if (mode === 'normal') setLoading(false)
+      }
+    },
+    [PAGE_SIZE_NUMBER, formatTime, page, search, statusFilter, showToast],
+  )
 
   useEffect(() => {
-    fetchUsers()
+    fetchUsers('normal')
   }, [fetchUsers])
 
   useEffect(() => {
     const onVisible = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchUsers()
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        // 页面重新可见时做一次静默刷新
+        fetchUsers('silent')
+      }
     }
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVisible)
     }
-    const timer = window.setInterval(fetchUsers, 5000)
+    const timer = window.setInterval(() => {
+      // 静默轮询：仅在列表视图空闲时后台刷新，不显示 loading，不弹错误
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+      if (detailUser || editForm) return
+      void fetchUsers('silent')
+    }, 10000)
     return () => {
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible)
       window.clearInterval(timer)
     }
-  }, [fetchUsers])
+  }, [detailUser, editForm, fetchUsers])
 
   const totalPages = Math.max(1, Math.ceil(Math.max(0, total) / PAGE_SIZE_NUMBER))
 
