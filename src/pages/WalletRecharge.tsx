@@ -329,19 +329,6 @@ const WalletRecharge: React.FC = () => {
 
               <div className="wallet-recharge-field">
                 <label className="wallet-recharge-label">
-                  {lang === 'zh'
-                    ? '预计到货(当前汇率1 : 1.00)'
-                    : 'Estimated received (current rate 1 : 1.00)'}
-                </label>
-                <input
-                  className="wallet-recharge-input wallet-recharge-input--readonly wallet-recharge-input--short"
-                  value={amount || '0.00'}
-                  readOnly
-                />
-              </div>
-
-              <div className="wallet-recharge-field">
-                <label className="wallet-recharge-label">
                   <span className="wallet-recharge-required">*</span>
                   {lang === 'zh' ? '交易号' : 'Transaction ID'}
                 </label>
