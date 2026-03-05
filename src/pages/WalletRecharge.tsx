@@ -39,6 +39,9 @@ const WalletRecharge: React.FC = () => {
     ethAddress?: string
     btcAddress?: string
     trc20Address?: string
+    ethQrUrl?: string
+    btcQrUrl?: string
+    trc20QrUrl?: string
   }
   const [platformPayment, setPlatformPayment] = useState<PlatformPaymentConfig>({
     receiveAddress: '',
@@ -55,6 +58,9 @@ const WalletRecharge: React.FC = () => {
           ethAddress: data.ethAddress ?? '',
           btcAddress: data.btcAddress ?? '',
           trc20Address: data.trc20Address ?? '',
+          ethQrUrl: data.ethQrUrl ?? '',
+          btcQrUrl: data.btcQrUrl ?? '',
+          trc20QrUrl: data.trc20QrUrl ?? '',
         })
       })
       .catch(() => {})
@@ -65,6 +71,12 @@ const WalletRecharge: React.FC = () => {
     if (network === 'BTC') return platformPayment.btcAddress || platformPayment.receiveAddress
     // 默认 TRC20
     return platformPayment.trc20Address || platformPayment.receiveAddress
+  })()
+
+  const depositQrUrl = (() => {
+    if (network === 'ETH') return platformPayment.ethQrUrl || platformPayment.receiveQrUrl
+    if (network === 'BTC') return platformPayment.btcQrUrl || platformPayment.receiveQrUrl
+    return platformPayment.trc20QrUrl || platformPayment.receiveQrUrl
   })()
 
   const tradePwdChars = tradePwd.padEnd(6, ' ').slice(0, 6).split('')
@@ -163,7 +175,7 @@ const WalletRecharge: React.FC = () => {
   }
 
   useEffect(() => {
-    if (platformPayment.receiveQrUrl) return
+    if (depositQrUrl) return
     const canvas = qrCanvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -186,7 +198,7 @@ const WalletRecharge: React.FC = () => {
     drawFinder(margin, margin)
     drawFinder(size - margin - block, margin)
     drawFinder(margin, size - margin - block)
-  }, [platformPayment.receiveQrUrl])
+  }, [depositQrUrl])
 
   return (
     <div className="account-page">
@@ -258,13 +270,13 @@ const WalletRecharge: React.FC = () => {
 
               <div className="wallet-recharge-qrcode-row">
                 <div className="wallet-recharge-qrcode-box">
-                  {platformPayment.receiveQrUrl ? (
-                    <img src={platformPayment.receiveQrUrl} alt="" className="wallet-recharge-qrcode-placeholder wallet-recharge-qrcode-img" />
+                  {depositQrUrl ? (
+                    <img src={depositQrUrl} alt="" className="wallet-recharge-qrcode-placeholder wallet-recharge-qrcode-img" />
                   ) : (
                     <canvas ref={qrCanvasRef} className="wallet-recharge-qrcode-placeholder" aria-hidden="true" />
                   )}
                 </div>
-                {!platformPayment.receiveQrUrl && (
+                {!depositQrUrl && (
                   <button
                     type="button"
                     className="wallet-recharge-qrcode-save-btn"

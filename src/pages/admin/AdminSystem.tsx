@@ -14,6 +14,12 @@ function resolveImageSrc(url: string | undefined): string {
 interface Config {
   receiveAddress: string
   receiveQrUrl: string
+  ethAddress?: string
+  btcAddress?: string
+  trc20Address?: string
+  ethQrUrl?: string
+  btcQrUrl?: string
+  trc20QrUrl?: string
 }
 
 interface FeaturedProductRow {
@@ -60,12 +66,19 @@ const AdminSystem: React.FC = () => {
   const [config, setConfig] = useState<Config>({ receiveAddress: '', receiveQrUrl: '' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [receiveAddressInput, setReceiveAddressInput] = useState('')
-  const [receiveQrUrlInput, setReceiveQrUrlInput] = useState('')
-  const [ethAddressInput, setEthAddressInput] = useState('')
-  const [btcAddressInput, setBtcAddressInput] = useState('')
+  // USDT‑TRC20
   const [trc20AddressInput, setTrc20AddressInput] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [trc20QrUrlInput, setTrc20QrUrlInput] = useState('')
+  // ETH
+  const [ethAddressInput, setEthAddressInput] = useState('')
+  const [ethQrUrlInput, setEthQrUrlInput] = useState('')
+  // BTC
+  const [btcAddressInput, setBtcAddressInput] = useState('')
+  const [btcQrUrlInput, setBtcQrUrlInput] = useState('')
+  const trc20FileInputRef = useRef<HTMLInputElement>(null)
+  const ethFileInputRef = useRef<HTMLInputElement>(null)
+  const btcFileInputRef = useRef<HTMLInputElement>(null)
+  const [activeQrNetwork, setActiveQrNetwork] = useState<'TRC20' | 'ETH' | 'BTC' | null>(null)
   const { showToast } = useToast()
 
   const [featuredProducts, setFeaturedProducts] = useState<FeaturedProductRow[]>([])
@@ -105,15 +118,36 @@ const AdminSystem: React.FC = () => {
   useEffect(() => {
     let cancelled = false
     api
-      .get<Config & { ethAddress?: string; btcAddress?: string; trc20Address?: string }>('/api/admin/platform-payment-config')
+      .get<
+        Config & {
+          ethAddress?: string
+          btcAddress?: string
+          trc20Address?: string
+          ethQrUrl?: string
+          btcQrUrl?: string
+          trc20QrUrl?: string
+        }
+      >('/api/admin/platform-payment-config')
       .then((data) => {
         if (cancelled) return
-        setConfig({ receiveAddress: data.receiveAddress ?? '', receiveQrUrl: data.receiveQrUrl ?? '' })
-        setReceiveAddressInput(data.receiveAddress ?? '')
-        setReceiveQrUrlInput(data.receiveQrUrl ?? '')
-        setEthAddressInput(data.ethAddress ?? '')
-        setBtcAddressInput(data.btcAddress ?? '')
-        setTrc20AddressInput(data.trc20Address ?? '')
+        const nextConfig: Config = {
+          receiveAddress: data.receiveAddress ?? '',
+          receiveQrUrl: data.receiveQrUrl ?? '',
+          ethAddress: data.ethAddress ?? '',
+          btcAddress: data.btcAddress ?? '',
+          trc20Address: data.trc20Address ?? '',
+          ethQrUrl: data.ethQrUrl ?? '',
+          btcQrUrl: data.btcQrUrl ?? '',
+          trc20QrUrl: data.trc20QrUrl ?? '',
+        }
+        setConfig(nextConfig)
+        // 默认 TRC20 使用旧的 receiveAddress / receiveQrUrl 兼容历史数据
+        setTrc20AddressInput(nextConfig.trc20Address || nextConfig.receiveAddress || '')
+        setTrc20QrUrlInput(nextConfig.trc20QrUrl || nextConfig.receiveQrUrl || '')
+        setEthAddressInput(nextConfig.ethAddress ?? '')
+        setEthQrUrlInput(nextConfig.ethQrUrl ?? '')
+        setBtcAddressInput(nextConfig.btcAddress ?? '')
+        setBtcQrUrlInput(nextConfig.btcQrUrl ?? '')
       })
       .catch(() => {
         if (!cancelled) showToast('加载配置失败', 'error')
@@ -184,23 +218,41 @@ const AdminSystem: React.FC = () => {
   }, [searchShopIdInput, showToast])
 
   const handleSave = () => {
-    const addr = receiveAddressInput.trim()
-    const qr = receiveQrUrlInput.trim()
-    if (!addr || !qr) {
-      showToast('请同时填写收款地址与收款二维码', 'error')
+    const trc20Addr = trc20AddressInput.trim()
+    const trc20Qr = trc20QrUrlInput.trim()
+    if (!trc20Addr || !trc20Qr) {
+      showToast('请先填写 USDT‑TRC20 的地址和二维码', 'error')
       return
     }
+    const ethAddr = ethAddressInput.trim()
+    const ethQr = ethQrUrlInput.trim()
+    const btcAddr = btcAddressInput.trim()
+    const btcQr = btcQrUrlInput.trim()
     setSaving(true)
     api
       .put('/api/admin/platform-payment-config', {
-        receiveAddress: addr,
-        receiveQrUrl: qr,
-        ethAddress: ethAddressInput.trim(),
-        btcAddress: btcAddressInput.trim(),
-        trc20Address: trc20AddressInput.trim(),
+        // 兼容旧字段：receiveAddress/receiveQrUrl 作为 TRC20 默认配置
+        receiveAddress: trc20Addr,
+        receiveQrUrl: trc20Qr,
+        trc20Address: trc20Addr,
+        trc20QrUrl: trc20Qr,
+        ethAddress: ethAddr,
+        ethQrUrl: ethQr,
+        btcAddress: btcAddr,
+        btcQrUrl: btcQr,
       })
       .then(() => {
-        setConfig({ receiveAddress: addr, receiveQrUrl: qr })
+        setConfig((prev) => ({
+          ...prev,
+          receiveAddress: trc20Addr,
+          receiveQrUrl: trc20Qr,
+          trc20Address: trc20Addr,
+          trc20QrUrl: trc20Qr,
+          ethAddress: ethAddr,
+          ethQrUrl: ethQr,
+          btcAddress: btcAddr,
+          btcQrUrl: btcQr,
+        }))
         showToast('保存成功')
       })
       .catch((e) => {
@@ -209,9 +261,9 @@ const AdminSystem: React.FC = () => {
       .finally(() => setSaving(false))
   }
 
-  const canSave = receiveAddressInput.trim() !== '' && receiveQrUrlInput.trim() !== ''
+  const canSave = trc20AddressInput.trim() !== '' && trc20QrUrlInput.trim() !== ''
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (network: 'TRC20' | 'ETH' | 'BTC') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (!/^image\/(jpeg|png|gif|webp)$/i.test(file.type)) {
@@ -220,6 +272,7 @@ const AdminSystem: React.FC = () => {
       return
     }
     const url = URL.createObjectURL(file)
+    setActiveQrNetwork(network)
     setCropImageUrl(url)
     setCropImageSize({ w: 0, h: 0 })
     setCropBaseScale(1)
@@ -319,7 +372,13 @@ const AdminSystem: React.FC = () => {
       if (!blob) throw new Error('生成图片失败')
       const file = new File([blob], 'qr.png', { type: 'image/png' })
       const { url } = await api.uploadImage(file)
-      setReceiveQrUrlInput(url)
+      if (activeQrNetwork === 'TRC20') {
+        setTrc20QrUrlInput(url)
+      } else if (activeQrNetwork === 'ETH') {
+        setEthQrUrlInput(url)
+      } else if (activeQrNetwork === 'BTC') {
+        setBtcQrUrlInput(url)
+      }
       showToast('二维码已裁剪并上传，请点击保存')
     } catch (err) {
       showToast(err instanceof Error ? err.message : '上传失败', 'error')
@@ -328,6 +387,7 @@ const AdminSystem: React.FC = () => {
       setCropOpen(false)
       setCropImageUrl(null)
       setCropImageReady(false)
+      setActiveQrNetwork(null)
       URL.revokeObjectURL(cropImageUrl)
     }
   }, [cropImageUrl, showToast])
@@ -464,37 +524,137 @@ const AdminSystem: React.FC = () => {
   return (
     <div className="admin-page">
       <h2 className="admin-page-title">系统管理</h2>
-      <p className="admin-page-desc">平台统一收款配置：收款地址与收款二维码将展示在商城充值与店铺充值页面。修改时须同时填写收款地址与收款二维码。</p>
+      <p className="admin-page-desc">平台统一收款配置：支持 USDT‑TRC20 / ETH / BTC 三种网络。各网络的地址与二维码将展示在商城充值与店铺充值页面。</p>
 
       <section className="admin-system-section admin-system-single-box">
         <h3 className="admin-system-section-title">平台统一收款配置</h3>
-        <p className="admin-system-hint">收款地址与二维码将展示在商城充值与店铺充值页。保存时须同时填写收款地址与收款二维码。</p>
+        <p className="admin-system-hint">USDT‑TRC20 为必填，ETH / BTC 可按需配置。前台与店铺充值页会按所选网络展示对应一套地址与二维码。</p>
 
         <div className="admin-system-form">
+          {/* USDT‑TRC20 */}
           <div className="admin-system-field">
-            <label className="admin-system-label">收款地址</label>
+            <label className="admin-system-label">USDT‑TRC20 当前地址</label>
             <input
               type="text"
               className="admin-system-input admin-system-input--address"
-              value={receiveAddressInput}
-              onChange={(e) => setReceiveAddressInput(e.target.value)}
-              placeholder="请输入收款地址（如 USDT-TRC20 地址）"
+              value={trc20AddressInput}
+              onChange={(e) => setTrc20AddressInput(e.target.value)}
+              placeholder="请输入 USDT‑TRC20 收款地址"
             />
           </div>
           <div className="admin-system-field">
-            <label className="admin-system-label">收款二维码</label>
+            <label className="admin-system-label">USDT‑TRC20 当前二维码</label>
             <input
-              ref={fileInputRef}
+              ref={trc20FileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/gif,image/webp"
               className="admin-system-file-input"
-              onChange={handleFileSelect}
-              aria-label="上传二维码图片"
+              onChange={handleFileSelect('TRC20')}
+              aria-label="上传 USDT‑TRC20 二维码图片"
             />
-            <div className="admin-system-upload-area admin-system-upload-area--square" onClick={() => fileInputRef.current?.click()} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()} aria-label="上传二维码图片">
-              {receiveQrUrlInput ? (
+            <div
+              className="admin-system-upload-area admin-system-upload-area--square"
+              onClick={() => trc20FileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && trc20FileInputRef.current?.click()}
+              aria-label="上传 USDT‑TRC20 二维码图片"
+            >
+              {trc20QrUrlInput ? (
                 <>
-                  <img src={receiveQrUrlInput} alt="二维码预览" className="admin-system-upload-preview" />
+                  <img src={trc20QrUrlInput} alt="USDT‑TRC20 二维码预览" className="admin-system-upload-preview" />
+                  <span className="admin-system-upload-label">点击可重新上传</span>
+                </>
+              ) : (
+                <>
+                  <svg className="admin-system-upload-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                  <span className="admin-system-upload-text">点击上传</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* ETH 网络 */}
+          <div className="admin-system-field">
+            <label className="admin-system-label">ETH 地址</label>
+            <input
+              type="text"
+              className="admin-system-input admin-system-input--address"
+              value={ethAddressInput}
+              onChange={(e) => setEthAddressInput(e.target.value)}
+              placeholder="可选，填写 ETH 网络收款地址"
+            />
+          </div>
+          <div className="admin-system-field">
+            <label className="admin-system-label">ETH 二维码</label>
+            <input
+              ref={ethFileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              className="admin-system-file-input"
+              onChange={handleFileSelect('ETH')}
+              aria-label="上传 ETH 二维码图片"
+            />
+            <div
+              className="admin-system-upload-area admin-system-upload-area--square"
+              onClick={() => ethFileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && ethFileInputRef.current?.click()}
+              aria-label="上传 ETH 二维码图片"
+            >
+              {ethQrUrlInput ? (
+                <>
+                  <img src={ethQrUrlInput} alt="ETH 二维码预览" className="admin-system-upload-preview" />
+                  <span className="admin-system-upload-label">点击可重新上传</span>
+                </>
+              ) : (
+                <>
+                  <svg className="admin-system-upload-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                  <span className="admin-system-upload-text">点击上传</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* BTC 网络 */}
+          <div className="admin-system-field">
+            <label className="admin-system-label">BTC 地址</label>
+            <input
+              type="text"
+              className="admin-system-input admin-system-input--address"
+              value={btcAddressInput}
+              onChange={(e) => setBtcAddressInput(e.target.value)}
+              placeholder="可选，填写 BTC 网络收款地址"
+            />
+          </div>
+          <div className="admin-system-field">
+            <label className="admin-system-label">BTC 二维码</label>
+            <input
+              ref={btcFileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              className="admin-system-file-input"
+              onChange={handleFileSelect('BTC')}
+              aria-label="上传 BTC 二维码图片"
+            />
+            <div
+              className="admin-system-upload-area admin-system-upload-area--square"
+              onClick={() => btcFileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && btcFileInputRef.current?.click()}
+              aria-label="上传 BTC 二维码图片"
+            >
+              {btcQrUrlInput ? (
+                <>
+                  <img src={btcQrUrlInput} alt="BTC 二维码预览" className="admin-system-upload-preview" />
                   <span className="admin-system-upload-label">点击可重新上传</span>
                 </>
               ) : (
@@ -515,10 +675,10 @@ const AdminSystem: React.FC = () => {
               onClick={handleSave}
               disabled={saving || !canSave}
             >
-              {saving ? '保存中…' : (config.receiveAddress && config.receiveQrUrl ? '修改' : '上传')}
+              {saving ? '保存中…' : trc20AddressInput && trc20QrUrlInput ? '修改' : '上传'}
             </button>
             {!canSave && (
-              <span className="admin-system-save-hint">请同时填写收款地址并上传收款二维码后再保存</span>
+              <span className="admin-system-save-hint">请先填写 USDT‑TRC20 的地址并上传二维码后再保存</span>
             )}
           </div>
         </div>
