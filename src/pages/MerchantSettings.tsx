@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { api } from '../api/client'
 import { useLang } from '../context/LangContext'
+import { useToast } from '../components/ToastProvider'
 
 const AUTH_USER_KEY = 'authUser'
 
@@ -25,6 +26,7 @@ interface ShopBasic {
 
 const MerchantSettings: React.FC = () => {
   const { lang } = useLang()
+  const { showToast } = useToast()
   const auth = getAuth()
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [bannerUrl, setBannerUrl] = useState<string | null>(null)
@@ -234,7 +236,10 @@ const MerchantSettings: React.FC = () => {
 
   const handleShopTradeSetSubmit = () => {
     if (!auth?.shopId || !auth?.id) {
-      showMsg(lang === 'zh' ? '未登录商家账号' : 'Not logged in to merchant account')
+      showToast(
+        lang === 'zh' ? '未登录商家账号' : 'Not logged in to merchant account',
+        'error',
+      )
       return
     }
     if (!validateShopTradeSet()) return
@@ -244,20 +249,25 @@ const MerchantSettings: React.FC = () => {
         newTradePassword: shopTradeNew,
       })
       .then(() => {
-        showMsg(lang === 'zh' ? '店铺交易密码已设置' : 'Shop payment PIN has been set')
+        showToast(
+          lang === 'zh' ? '店铺交易密码已设置' : 'Shop payment PIN has been set',
+        )
         setShopHasTradePwd(true)
         setShopTradeMode('summary')
         resetShopTradeForm()
       })
       .catch((err: unknown) => {
         const fallback = lang === 'zh' ? '设置失败' : 'Failed to set PIN'
-        showMsg(err instanceof Error ? err.message : fallback)
+        showToast(err instanceof Error ? err.message : fallback, 'error')
       })
   }
 
   const handleShopTradeEditSubmit = () => {
     if (!auth?.shopId || !auth?.id) {
-      showMsg(lang === 'zh' ? '未登录商家账号' : 'Not logged in to merchant account')
+      showToast(
+        lang === 'zh' ? '未登录商家账号' : 'Not logged in to merchant account',
+        'error',
+      )
       return
     }
     if (!validateShopTradeEdit()) return
@@ -268,14 +278,16 @@ const MerchantSettings: React.FC = () => {
         newTradePassword: shopTradeNew,
       })
       .then(() => {
-        showMsg(lang === 'zh' ? '店铺交易密码已修改' : 'Shop payment PIN has been updated')
+        showToast(
+          lang === 'zh' ? '店铺交易密码已修改' : 'Shop payment PIN has been updated',
+        )
         setShopHasTradePwd(true)
         setShopTradeMode('summary')
         resetShopTradeForm()
       })
       .catch((err: unknown) => {
         const fallback = lang === 'zh' ? '修改失败' : 'Failed to update PIN'
-        showMsg(err instanceof Error ? err.message : fallback)
+        showToast(err instanceof Error ? err.message : fallback, 'error')
       })
   }
 
