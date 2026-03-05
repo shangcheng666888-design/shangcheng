@@ -46,6 +46,10 @@ interface MallUser {
 
 const PAGE_SIZE = 30
 
+function formatTime(iso: string): string {
+  return formatDateTime(iso)
+}
+
 function cloneUser(u: MallUser): MallUser {
   return {
     ...u,
@@ -65,8 +69,6 @@ const AdminUsers: React.FC = () => {
   const { showToast } = useToast()
 
   const PAGE_SIZE_NUMBER = PAGE_SIZE
-
-  const formatTime = (iso: string) => formatDateTime(iso)
 
   const normalizeAddress = (a: unknown): UserAddress | null => {
     if (!a || typeof a !== 'object') return null
@@ -133,7 +135,7 @@ const AdminUsers: React.FC = () => {
         if (mode === 'normal') setLoading(false)
       }
     },
-    [PAGE_SIZE_NUMBER, formatTime, page, search, statusFilter, showToast],
+    [PAGE_SIZE_NUMBER, page, search, statusFilter, showToast],
   )
 
   useEffect(() => {
