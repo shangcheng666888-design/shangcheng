@@ -184,34 +184,22 @@ function formatOrderAddress(addr: ApiOrder['address'], lang: 'zh' | 'en'): strin
           postal: 'Postal code: ',
           detail: 'Address: ',
         }
+  // 店铺侧隐私规则：只展示收件人姓名与国家/省份/城市，其余字段统一做掩码处理
   if (addr.recipient) parts.push(`${labels.recipient}${addr.recipient}`)
-  const rawPhone = addr.phone ?? ''
-  const digits = rawPhone.replace(/\D/g, '')
-  let maskedPhone = rawPhone
-  if (digits.length >= 7) {
-    maskedPhone = `${digits.slice(0, 3)}****${digits.slice(-2)}`
-  }
-  const phone = [addr.phoneCode, maskedPhone].filter(Boolean).join(' ')
-  if (phone.trim()) parts.push(`${labels.phone}${phone}`)
-  if (addr.email) {
-    const e = addr.email.trim()
-    const [name, domain] = e.split('@')
-    let maskedEmail = e
-    if (domain) {
-      if (!name) {
-        maskedEmail = `***@${domain}`
-      } else if (name.length <= 2) {
-        maskedEmail = `${name[0] ?? ''}***@${domain}`
-      } else {
-        maskedEmail = `${name[0]}***${name[name.length - 1]}@${domain}`
-      }
-    }
-    parts.push(`${labels.email}${maskedEmail}`)
-  }
   const region = [addr.country, addr.province, addr.city].filter(Boolean).join(' ')
   if (region) parts.push(`${labels.region}${region}`)
-  if (addr.postal) parts.push(`${labels.postal}${addr.postal}`)
-  if (addr.detail) parts.push(`${labels.detail}${addr.detail}`)
+  if (addr.phone || addr.phoneCode) {
+    parts.push(`${labels.phone}******`)
+  }
+  if (addr.email) {
+    parts.push(`${labels.email}***`)
+  }
+  if (addr.postal) {
+    parts.push(`${labels.postal}***`)
+  }
+  if (addr.detail) {
+    parts.push(`${labels.detail}***`)
+  }
   return parts.join('  ')
 }
 
