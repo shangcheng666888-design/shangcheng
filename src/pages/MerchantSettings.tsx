@@ -35,6 +35,17 @@ const MerchantSettings: React.FC = () => {
   const logoInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
+  // 店铺交易密码（提现密码）管理
+  const [shopHasTradePwd, setShopHasTradePwd] = useState<boolean | null>(null)
+  const [shopTradeMode, setShopTradeMode] = useState<'summary' | 'set' | 'edit'>('summary')
+  const [shopTradeOld, setShopTradeOld] = useState('')
+  const [shopTradeNew, setShopTradeNew] = useState('')
+  const [shopTradeConfirm, setShopTradeConfirm] = useState('')
+  const [shopTradeShowOld, setShopTradeShowOld] = useState(false)
+  const [shopTradeShowNew, setShopTradeShowNew] = useState(false)
+  const [shopTradeShowConfirm, setShopTradeShowConfirm] = useState(false)
+  const [shopTradeErrors, setShopTradeErrors] = useState({ old: '', new: '', confirm: '' })
+
   useEffect(() => {
     if (!auth?.shopId) {
       setLoadOk(true)
@@ -105,6 +116,34 @@ const MerchantSettings: React.FC = () => {
     setTimeout(() => setMsg(null), 3000)
   }
 
+  const restrictToSixDigits = (v: string) => v.replace(/\D/g, '').slice(0, 6)
+
+  // 查询店铺是否已设置交易密码
+  useEffect(() => {
+    if (!auth?.shopId || !auth?.id) {
+      setShopHasTradePwd(null)
+      return
+    }
+    let cancelled = false
+    api
+      .get<{ hasTradePassword?: boolean }>(
+        `/api/shops/${encodeURIComponent(auth.shopId)}/trade-password/status?userId=${encodeURIComponent(
+          auth.id,
+        )}`,
+      )
+      .then((res) => {
+        if (cancelled) return
+        setShopHasTradePwd(!!res.hasTradePassword)
+        setShopTradeMode('summary')
+      })
+      .catch(() => {
+        if (!cancelled) setShopHasTradePwd(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [auth?.shopId, auth?.id])
+
   const patchLogo = (url: string | null) => {
     if (!auth?.shopId || !auth?.id) {
       return Promise.reject(
@@ -127,6 +166,117 @@ const MerchantSettings: React.FC = () => {
       userId: auth.id,
       banner: url,
     })
+  }
+
+  const validateShopTradeSet = (): boolean => {
+    const next = { old: '', new: '', confirm: '' }
+    const pinRegex = /^\d{6}$/
+    if (!pinRegex.test(shopTradeNew)) {
+      next.new =
+        lang === 'zh'
+          ? '交易密码需为 6 位数字'
+          : 'Payment PIN must be 6 digits'
+    }
+    if (!pinRegex.test(shopTradeConfirm)) {
+      next.confirm =
+        lang === 'zh'
+          ? '请再次输入 6 位数字密码'
+          : 'Please confirm the 6‑digit PIN'
+    } else if (shopTradeNew !== shopTradeConfirm) {
+      next.confirm =
+        lang === 'zh'
+          ? '两次输入的密码不一致'
+          : 'The two PINs do not match'
+    }
+    setShopTradeErrors(next)
+    return !next.new && !next.confirm
+  }
+
+  const validateShopTradeEdit = (): boolean => {
+    const next = { old: '', new: '', confirm: '' }
+    const pinRegex = /^\d{6}$/
+    if (!pinRegex.test(shopTradeOld)) {
+      next.old =
+        lang === 'zh'
+          ? '请输入当前 6 位密码'
+          : 'Please enter your current 6‑digit PIN'
+    }
+    if (!pinRegex.test(shopTradeNew)) {
+      next.new =
+        lang === 'zh'
+          ? '新密码需为 6 位数字'
+          : 'New PIN must be 6 digits'
+    }
+    if (!pinRegex.test(shopTradeConfirm)) {
+      next.confirm =
+        lang === 'zh'
+          ? '请再次输入 6 位数字密码'
+          : 'Please confirm the 6‑digit PIN'
+    } else if (shopTradeNew !== shopTradeConfirm) {
+      next.confirm =
+        lang === 'zh'
+          ? '两次输入的密码不一致'
+          : 'The two PINs do not match'
+    }
+    setShopTradeErrors(next)
+    return !next.old && !next.new && !next.confirm
+  }
+
+  const resetShopTradeForm = () => {
+    setShopTradeOld('')
+    setShopTradeNew('')
+    setShopTradeConfirm('')
+    setShopTradeShowOld(false)
+    setShopTradeShowNew(false)
+    setShopTradeShowConfirm(false)
+    setShopTradeErrors({ old: '', new: '', confirm: '' })
+  }
+
+  const handleShopTradeSetSubmit = () => {
+    if (!auth?.shopId || !auth?.id) {
+      showMsg(lang === 'zh' ? '未登录商家账号' : 'Not logged in to merchant account')
+      return
+    }
+    if (!validateShopTradeSet()) return
+    api
+      .post(`/api/shops/${encodeURIComponent(auth.shopId)}/trade-password/set`, {
+        userId: auth.id,
+        newTradePassword: shopTradeNew,
+      })
+      .then(() => {
+        showMsg(lang === 'zh' ? '店铺交易密码已设置' : 'Shop payment PIN has been set')
+        setShopHasTradePwd(true)
+        setShopTradeMode('summary')
+        resetShopTradeForm()
+      })
+      .catch((err: unknown) => {
+        const fallback = lang === 'zh' ? '设置失败' : 'Failed to set PIN'
+        showMsg(err instanceof Error ? err.message : fallback)
+      })
+  }
+
+  const handleShopTradeEditSubmit = () => {
+    if (!auth?.shopId || !auth?.id) {
+      showMsg(lang === 'zh' ? '未登录商家账号' : 'Not logged in to merchant account')
+      return
+    }
+    if (!validateShopTradeEdit()) return
+    api
+      .post(`/api/shops/${encodeURIComponent(auth.shopId)}/trade-password/change`, {
+        userId: auth.id,
+        oldTradePassword: shopTradeOld,
+        newTradePassword: shopTradeNew,
+      })
+      .then(() => {
+        showMsg(lang === 'zh' ? '店铺交易密码已修改' : 'Shop payment PIN has been updated')
+        setShopHasTradePwd(true)
+        setShopTradeMode('summary')
+        resetShopTradeForm()
+      })
+      .catch((err: unknown) => {
+        const fallback = lang === 'zh' ? '修改失败' : 'Failed to update PIN'
+        showMsg(err instanceof Error ? err.message : fallback)
+      })
   }
 
   const onLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -306,6 +456,233 @@ const MerchantSettings: React.FC = () => {
               </button>
             )}
           </div>
+        </div>
+      </section>
+
+      <section className="merchant-settings-section">
+        <div className="merchant-settings-section-head">
+          <h2 className="merchant-settings-card-title">
+            {lang === 'zh' ? '店铺提现密码' : 'Shop payment PIN'}
+          </h2>
+          <p className="merchant-settings-card-desc">
+            {lang === 'zh'
+              ? '用于店铺钱包充值与提现校验，仅店铺本人可设置和修改。请牢记 6 位数字密码。'
+              : 'Used to verify top‑ups and withdrawals for your shop wallet. Only the shop owner can set and change this 6‑digit PIN.'}
+          </p>
+        </div>
+        <div className="merchant-settings-block">
+          {!auth?.shopId || !auth?.id ? (
+            <p className="merchant-settings-error">
+              {lang === 'zh'
+                ? '未获取到店铺信息，请重新登录商家后台后再设置提现密码。'
+                : 'Shop information not found. Please log in to the merchant backend again before setting the payment PIN.'}
+            </p>
+          ) : shopTradeMode === 'summary' ? (
+            <div className="account-settings-summary">
+              <p className="account-settings-summary-text">
+                {shopHasTradePwd
+                  ? (lang === 'zh'
+                    ? '已设置店铺提现密码，可用于店铺钱包充值与提现校验。'
+                    : 'Shop payment PIN is set and will be used to verify wallet top‑ups and withdrawals.')
+                  : (lang === 'zh'
+                    ? '当前尚未设置店铺提现密码，为保障资金安全，请先设置。'
+                    : 'Shop payment PIN is not set yet. For security, please set it before using wallet withdrawals.')}
+              </p>
+              <div className="account-settings-summary-actions">
+                {shopHasTradePwd ? (
+                  <button
+                    type="button"
+                    className="account-settings-submit"
+                    onClick={() => {
+                      resetShopTradeForm()
+                      setShopTradeMode('edit')
+                    }}
+                  >
+                    {lang === 'zh' ? '修改提现密码' : 'Change payment PIN'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="account-settings-submit"
+                    onClick={() => {
+                      resetShopTradeForm()
+                      setShopTradeMode('set')
+                    }}
+                  >
+                    {lang === 'zh' ? '设置提现密码' : 'Set payment PIN'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="account-settings-form">
+              {shopTradeMode === 'edit' && (
+                <div className="account-settings-field">
+                  <label className="account-settings-label">
+                    <span className="account-settings-required">*</span>
+                    {lang === 'zh' ? '旧密码' : 'Current PIN'}
+                  </label>
+                  <div className="account-settings-input-wrap">
+                    <input
+                      type={shopTradeShowOld ? 'text' : 'password'}
+                      className="account-settings-input"
+                      placeholder={
+                        lang === 'zh'
+                          ? '请输入 6 位数字旧密码'
+                          : 'Please enter your current 6‑digit PIN'
+                      }
+                      value={shopTradeOld}
+                      onChange={(e) => setShopTradeOld(restrictToSixDigits(e.target.value))}
+                      maxLength={6}
+                      inputMode="numeric"
+                      autoComplete="off"
+                    />
+                    <button
+                      type="button"
+                      className="account-settings-pwd-toggle"
+                      aria-label={
+                        shopTradeShowOld
+                          ? (lang === 'zh' ? '隐藏密码' : 'Hide PIN')
+                          : (lang === 'zh' ? '显示密码' : 'Show PIN')
+                      }
+                      onClick={() => setShopTradeShowOld((v) => !v)}
+                    >
+                      {shopTradeShowOld ? (
+                        <svg className="account-settings-pwd-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+                          <path fill="currentColor" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l1.66 1.66c.57-.23 1.18-.36 1.83-.36zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 21 21 19.73 4.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z" />
+                        </svg>
+                      ) : (
+                        <svg className="account-settings-pwd-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+                          <path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {shopTradeErrors.old && (
+                    <div className="login-error-slot">
+                      <p className="login-error-text">{shopTradeErrors.old}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="account-settings-field">
+                <label className="account-settings-label">
+                  <span className="account-settings-required">*</span>
+                  {lang === 'zh' ? '新密码' : 'New PIN'}
+                </label>
+                <div className="account-settings-input-wrap">
+                  <input
+                    type={shopTradeShowNew ? 'text' : 'password'}
+                    className="account-settings-input"
+                    placeholder={
+                      lang === 'zh'
+                        ? '请输入 6 位数字密码'
+                        : 'Please enter a new 6‑digit PIN'
+                    }
+                    value={shopTradeNew}
+                    onChange={(e) => setShopTradeNew(restrictToSixDigits(e.target.value))}
+                    maxLength={6}
+                    inputMode="numeric"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="account-settings-pwd-toggle"
+                    aria-label={
+                      shopTradeShowNew
+                        ? (lang === 'zh' ? '隐藏密码' : 'Hide PIN')
+                        : (lang === 'zh' ? '显示密码' : 'Show PIN')
+                    }
+                    onClick={() => setShopTradeShowNew((v) => !v)}
+                  >
+                    {shopTradeShowNew ? (
+                      <svg className="account-settings-pwd-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+                        <path fill="currentColor" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l1.66 1.66c.57-.23 1.18-.36 1.83-.36zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 21 21 19.73 4.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z" />
+                      </svg>
+                    ) : (
+                      <svg className="account-settings-pwd-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+                        <path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {shopTradeErrors.new && (
+                  <div className="login-error-slot">
+                    <p className="login-error-text">{shopTradeErrors.new}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="account-settings-field">
+                <label className="account-settings-label">
+                  <span className="account-settings-required">*</span>
+                  {lang === 'zh' ? '确认密码' : 'Confirm PIN'}
+                </label>
+                <div className="account-settings-input-wrap">
+                  <input
+                    type={shopTradeShowConfirm ? 'text' : 'password'}
+                    className="account-settings-input"
+                    placeholder={
+                      lang === 'zh'
+                        ? '请再次输入 6 位数字密码'
+                        : 'Please confirm the 6‑digit PIN'
+                    }
+                    value={shopTradeConfirm}
+                    onChange={(e) => setShopTradeConfirm(restrictToSixDigits(e.target.value))}
+                    maxLength={6}
+                    inputMode="numeric"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="account-settings-pwd-toggle"
+                    aria-label={
+                      shopTradeShowConfirm
+                        ? (lang === 'zh' ? '隐藏密码' : 'Hide PIN')
+                        : (lang === 'zh' ? '显示密码' : 'Show PIN')
+                    }
+                    onClick={() => setShopTradeShowConfirm((v) => !v)}
+                  >
+                    {shopTradeShowConfirm ? (
+                      <svg className="account-settings-pwd-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+                        <path fill="currentColor" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l1.66 1.66c.57-.23 1.18-.36 1.83-.36zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 21 21 19.73 4.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z" />
+                      </svg>
+                    ) : (
+                      <svg className="account-settings-pwd-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+                        <path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {shopTradeErrors.confirm && (
+                  <div className="login-error-slot">
+                    <p className="login-error-text">{shopTradeErrors.confirm}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="account-settings-actions">
+                <button
+                  type="button"
+                  className="account-settings-submit"
+                  onClick={shopTradeMode === 'edit' ? handleShopTradeEditSubmit : handleShopTradeSetSubmit}
+                >
+                  {lang === 'zh' ? '确认' : 'Confirm'}
+                </button>
+                <button
+                  type="button"
+                  className="account-settings-cancel"
+                  onClick={() => {
+                    resetShopTradeForm()
+                    setShopTradeMode('summary')
+                  }}
+                >
+                  {lang === 'zh' ? '取消' : 'Cancel'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
