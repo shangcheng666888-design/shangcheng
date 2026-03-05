@@ -1,0 +1,28 @@
+/* 这里目前主要样式在 index.css 中，保留文件用于未来按页面扩展样式 */
+
+/* 首屏/路由懒加载占位，尽量轻量以利于秒开 */
+.app-loading-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #f9fafb;
+  gap: 0.75rem;
+}
+.app-loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: app-loading-spin 0.7s linear infinite;
+}
+.app-loading-text {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+@keyframes app-loading-spin {
+  to { transform: rotate(360deg); }
+}

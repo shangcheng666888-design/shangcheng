@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/src/assets/zhandian.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>TikTok mall</title>
+    <script type="text/javascript">
+      window.CRISP_RUNTIME_CONFIG = {
+        locale: (function(){ try { var s = localStorage.getItem("site_lang"); return (s === "en" || s === "zh") ? s : "zh"; } catch(e){ return "zh"; } })()
+      };
+      window.$crisp=[];
+      window.CRISP_WEBSITE_ID="f8505941-c283-456f-a52b-cd1d13b1d00c";
+      window.$crisp.push(["do", "chat:hide"]);
+      window.$crisp.push(["on", "chat:closed", function(){ window.$crisp.push(["do", "chat:hide"]); }]);
+      (function(){
+        var d=document,s=d.createElement("script");
+        s.src="https://client.crisp.chat/l.js";
+        s.async=1;
+        d.getElementsByTagName("head")[0].appendChild(s);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
