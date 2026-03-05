@@ -165,7 +165,7 @@ const AdminDashboard: React.FC = () => {
                 <Tooltip
                   contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8 }}
                   labelStyle={{ color: '#111827' }}
-                  formatter={(value: number | undefined, name: string) => [name === '销售额' ? `$${Number(value).toLocaleString()}` : value, name === '销售额' ? '销售额' : '订单']}
+                  formatter={(value: number | undefined, name?: string) => [name === '销售额' ? `$${Number(value).toLocaleString()}` : value, name === '销售额' ? '销售额' : '订单']}
                   labelFormatter={(label) => label}
                 />
                 <Area yAxisId="left" type="monotone" dataKey="订单" stroke="#111827" fill="#f3f4f6" strokeWidth={2} name="订单" />

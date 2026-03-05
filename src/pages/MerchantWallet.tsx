@@ -17,7 +17,7 @@ const MerchantWallet: React.FC = () => {
   const [rechargeRecords, setRechargeRecords] = useState<WalletRechargeRecord[]>([])
   const [withdrawRecords, setWithdrawRecords] = useState<WalletWithdrawRecord[]>([])
   const [walletBalance, setWalletBalance] = useState(0)
-  const [platformDepositAddress, setPlatformDepositAddress] = useState('')
+  const [_platformDepositAddress, setPlatformDepositAddress] = useState('')
 
   useEffect(() => {
     let cancelled = false

@@ -23,7 +23,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ open, onClose }) => {
   const { lang } = useLang()
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const { items, totalCount, totalAmount, updateItemQuantity, removeItem } = useCart()
+  const { items, totalCount, updateItemQuantity, removeItem } = useCart()
 
   const [selectedIds, setSelectedIds] = useState<string[]>(() => items.map((it) => it.id))
 

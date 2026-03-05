@@ -10,9 +10,9 @@ import { useLang } from '../context/LangContext'
 
 const MerchantApply: React.FC = () => {
   const { lang } = useLang()
-  const [verifyMethod, setVerifyMethod] = useState<'email' | 'phone'>('email')
-  const [passwordVisible, setPasswordVisible] = useState(false)
-  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false)
+  const [_verifyMethod, _setVerifyMethod] = useState<'email' | 'phone'>('email')
+  const [_passwordVisible, _setPasswordVisible] = useState(false)
+  const [_confirmPasswordVisible, _setConfirmPasswordVisible] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [agreementModalOpen, setAgreementModalOpen] = useState(false)
   const [signatureModalOpen, setSignatureModalOpen] = useState(false)

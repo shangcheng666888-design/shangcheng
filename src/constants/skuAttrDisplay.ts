@@ -127,7 +127,7 @@ function parseToEntries(attrs: unknown): [string, string][] {
   if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
     return Object.entries(parsed as Record<string, unknown>)
       .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
-      .map(([k, v]) => [k, String(v)])
+      .map(([k, v]): [string, string] => [k, String(v)])
       .filter(([, v]) => v.trim() !== '')
   }
 

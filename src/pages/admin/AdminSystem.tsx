@@ -68,8 +68,8 @@ const AdminSystem: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<FeaturedProductRow[]>([])
   const [featuredShops, setFeaturedShops] = useState<FeaturedShopRow[]>([])
   const [hotProducts, setHotProducts] = useState<FeaturedProductRow[]>([])
-  const [shopsList, setShopsList] = useState<ShopOption[]>([])
-  const [shopProductsMap, setShopProductsMap] = useState<Record<string, ShopProductOption[]>>({})
+  const [_shopsList, setShopsList] = useState<ShopOption[]>([])
+  const [_shopProductsMap, setShopProductsMap] = useState<Record<string, ShopProductOption[]>>({})
   const [homeFeatLoading, setHomeFeatLoading] = useState(false)
   const [homeFeatSaving, setHomeFeatSaving] = useState<string | null>(null)
 
@@ -97,7 +97,6 @@ const AdminSystem: React.FC = () => {
   const cropUploading = useRef(false)
   const cropImageRef = useRef<HTMLImageElement | null>(null)
   const cropStateRef = useRef({ baseScale: 1, zoom: 1, frameX: 0, frameY: 0, w: 0, h: 0 })
-  const effectiveScale = cropBaseScale * cropZoom
   cropStateRef.current = { baseScale: cropBaseScale, zoom: cropZoom, frameX: framePos.x, frameY: framePos.y, w: cropImageSize.w, h: cropImageSize.h }
 
   useEffect(() => {
@@ -151,6 +150,7 @@ const AdminSystem: React.FC = () => {
       .then((d) => setShopProductsMap((m) => ({ ...m, [shopId]: d.list ?? [] })))
       .catch(() => setShopProductsMap((m) => ({ ...m, [shopId]: [] })))
   }, [])
+  void loadShopProducts
 
   const searchShopById = useCallback(() => {
     const shopId = searchShopIdInput.trim()
@@ -169,7 +169,7 @@ const AdminSystem: React.FC = () => {
         const shopName = shopList.length > 0 ? shopList[0].name : shopId
         const products = productsRes.list ?? []
         setSearchShopResult({ shopId, shopName, products })
-        if (products.length === 0) showToast('该店铺暂无上架商品', 'info')
+        if (products.length === 0) showToast('该店铺暂无上架商品', 'success')
       })
       .catch((e) => {
         showToast(e instanceof Error ? e.message : '查询失败，请确认店铺 ID 正确', 'error')
@@ -401,7 +401,7 @@ const AdminSystem: React.FC = () => {
         const shopName = shopList.length > 0 ? shopList[0].name : shopId
         const products = productsRes.list ?? []
         setSearchHotShopResult({ shopId, shopName, products })
-        if (products.length === 0) showToast('该店铺暂无上架商品', 'info')
+        if (products.length === 0) showToast('该店铺暂无上架商品', 'success')
       })
       .catch((e) => showToast(e instanceof Error ? e.message : '查询失败，请确认店铺 ID 正确', 'error'))
       .finally(() => setSearchHotShopLoading(false))

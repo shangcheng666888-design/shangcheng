@@ -107,7 +107,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate()
   const [searchKeyword, setSearchKeyword] = useState('')
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [isCategoryPaused, setIsCategoryPaused] = useState(false)
+  const [_isCategoryPaused, setIsCategoryPaused] = useState(false)
   const [visibleCategories, setVisibleCategories] = useState(() => recommendCategories.slice(0, 10))
   const [squareSlideIndex, setSquareSlideIndex] = useState(0)
   const [newArrivals, setNewArrivals] = useState<ProductItem[]>([])

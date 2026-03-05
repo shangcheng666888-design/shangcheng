@@ -122,7 +122,7 @@ const AccountCenter: React.FC = () => {
   const [settingsView, setSettingsView] = useState<SettingsView>('list')
   const navigate = useNavigate()
   const location = useLocation()
-  const [tradePwdModalOpen] = useState(false) // 已不再使用，保留占位避免大改
+  const [_tradePwdModalOpen] = useState(false) // 占位，已不再使用
 
   const [loginPwdOld, setLoginPwdOld] = useState('')
   const [loginPwdNew, setLoginPwdNew] = useState('')
@@ -209,6 +209,7 @@ const AccountCenter: React.FC = () => {
             })),
             address: {
               recipient: addr.recipient ?? '',
+              email: (addr as { email?: string }).email ?? '',
               phoneCode: addr.phoneCode ?? '',
               phone: addr.phone ?? '',
               country: addr.country ?? '',
@@ -808,6 +809,7 @@ const AccountCenter: React.FC = () => {
                     : orderList.filter((o) => o.status === orderTab)
             const cartPlaceholderAddress = {
               recipient: lang === 'zh' ? '请前往结算页选择' : 'Please choose on checkout page',
+              email: '',
               phoneCode: '',
               phone: '',
               country: '',

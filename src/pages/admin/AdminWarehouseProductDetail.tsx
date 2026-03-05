@@ -52,8 +52,8 @@ const normalizeDetail = (d: Record<string, unknown>): SupplyDetail => ({
   subCategoryId: d.subCategoryId != null ? String(d.subCategoryId) : undefined,
   status: d.status === 'off' ? 'off' : 'on',
   skus: (Array.isArray(d.skus) ? d.skus : []).map((s: Record<string, unknown>) => ({
-    skuId: s.skuId ?? s.sku_id,
-    productId: s.productId ?? s.product_id,
+    skuId: (s.skuId ?? s.sku_id) as number | undefined,
+    productId: (s.productId ?? s.product_id) as number | undefined,
     attrs: s.attrs,
     purchasePrice:
       s.purchasePrice != null
@@ -67,7 +67,7 @@ const normalizeDetail = (d: Record<string, unknown>): SupplyDetail => ({
         : s.selling_price != null
           ? Number(s.selling_price)
           : null,
-    coverImg: s.coverImg ?? s.cover_img ?? null,
+    coverImg: (s.coverImg ?? s.cover_img ?? null) as string | null,
     images: Array.isArray(s.images) ? (s.images as string[]) : [],
   })),
 })

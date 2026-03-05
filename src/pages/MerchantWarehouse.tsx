@@ -117,13 +117,13 @@ const MerchantWarehouse: React.FC = () => {
   /** 详情内多图轮播当前下标（采购） */
   const [detailImageIndex, setDetailImageIndex] = useState(0)
   /** 定价弹层：当前要改价的商品，null 表示关闭（已不再使用，定价交由系统自动完成） */
-  const [pricingItem, setPricingItem] = useState<WarehouseItem | null>(null)
+  const [_pricingItem, _setPricingItem] = useState<WarehouseItem | null>(null)
   /** 定价弹层内输入的新售价（字符串，用于受控输入，已废弃） */
-  const [pricingInput, setPricingInput] = useState('')
+  const [_pricingInput, _setPricingInput] = useState('')
   /** 采购定价并上架弹层：当前要采购的商品，null 表示关闭（已废弃，采购时系统自动定价） */
-  const [procurePricingItem, setProcurePricingItem] = useState<CatalogItem | null>(null)
+  const [_procurePricingItem, setProcurePricingItem] = useState<CatalogItem | null>(null)
   /** 采购定价弹层内输入的售价（已废弃） */
-  const [procurePricingInput, setProcurePricingInput] = useState('')
+  const [_procurePricingInput, setProcurePricingInput] = useState('')
   /** 供货商品列表（来自后端） */
   const [procureList, setProcureList] = useState<CatalogItem[]>([])
   const [procureTotal, setProcureTotal] = useState(0)
@@ -575,26 +575,6 @@ const MerchantWarehouse: React.FC = () => {
     }
   }
 
-  const openPricingModal = (item: WarehouseItem) => {
-    setPricingItem(item)
-    setPricingInput(item.price.toFixed(2))
-  }
-
-  const closePricingModal = () => {
-    setPricingItem(null)
-    setPricingInput('')
-  }
-
-  const handlePricingSubmit = () => {
-    // 已由系统自动定价，商家不再手动改价
-    showToast(
-      lang === 'zh'
-        ? '当前版本由系统根据店铺等级自动定价，无法手动修改。'
-        : 'Pricing is now calculated automatically based on your shop level and cannot be edited manually.',
-      'error',
-    )
-  }
-
   /** 将采购商品加入「我的商品」并上架（售价由系统按店铺等级自动计算） */
   const addProcureAndList = (item: CatalogItem) => {
     if (!shopId) {
@@ -630,21 +610,6 @@ const MerchantWarehouse: React.FC = () => {
   const openProcurePricingModal = (item: CatalogItem) => {
     // 直接按系统规则定价并上架，不再弹出手动定价弹窗
     addProcureAndList(item)
-  }
-
-  const closeProcurePricingModal = () => {
-    setProcurePricingItem(null)
-    setProcurePricingInput('')
-  }
-
-  const handleProcurePricingSubmit = () => {
-    // 已由系统自动定价，这个入口不再使用
-    showToast(
-      lang === 'zh'
-        ? '当前版本由系统根据店铺等级自动定价，无需手动填写售价。'
-        : 'Pricing is now calculated automatically based on your shop level, no need to fill in manually.',
-      'error',
-    )
   }
 
   /** 打开「我的商品」详情：拉取商品主图与描述，与采购详情一致展示 */

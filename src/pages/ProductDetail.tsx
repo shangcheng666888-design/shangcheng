@@ -240,13 +240,18 @@ const ProductDetail: React.FC = () => {
 
   const description = (listing?.descriptionHtml || listing?.detailHtml || '').trim()
 
-  const attrSelectors = listing?.skus?.length ? getAttrOptionsFromSkus(listing.skus) : []
+  const attrSelectors = listing?.skus?.length
+    ? getAttrOptionsFromSkus(listing.skus as Parameters<typeof getAttrOptionsFromSkus>[0])
+    : []
 
   const handleAttrChange = (label: string, rawValue: string) => {
     const next = { ...selectedAttrs, [label]: rawValue }
     setSelectedAttrs(next)
-    const found = findSkuByAttrs(listing!.skus, next)
-    setSelectedSku(found ?? null)
+    const found = findSkuByAttrs(
+      listing!.skus as unknown as Array<{ attrs: unknown; sku_id: string; [k: string]: unknown }>,
+      next
+    )
+    setSelectedSku((found ?? null) as ListingSku | null)
   }
 
   const handleBack = () => {

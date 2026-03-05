@@ -407,7 +407,7 @@ const MerchantLogin: React.FC = () => {
         type="button"
         className="merchant-login-service-fab"
         aria-label="在线客服"
-        onClick={openCrispChat}
+        onClick={() => openCrispChat()}
       >
         <img src={serviceIcon} alt="" className="merchant-login-service-icon" />
       </button>

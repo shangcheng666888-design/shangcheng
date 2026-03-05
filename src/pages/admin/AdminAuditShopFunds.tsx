@@ -33,10 +33,10 @@ const AdminAuditShopFunds: React.FC = () => {
   const [rechargePage, setRechargePage] = useState(1)
   const [withdrawPage, setWithdrawPage] = useState(1)
 
-  const [rechargeSearchInput, setRechargeSearchInput] = useState('')
-  const [withdrawSearchInput, setWithdrawSearchInput] = useState('')
-  const [rechargeKeyword, setRechargeKeyword] = useState('')
-  const [withdrawKeyword, setWithdrawKeyword] = useState('')
+  const [_rechargeSearchInput, _setRechargeSearchInput] = useState('')
+  const [_withdrawSearchInput, _setWithdrawSearchInput] = useState('')
+  const [rechargeKeyword, _setRechargeKeyword] = useState('')
+  const [withdrawKeyword, _setWithdrawKeyword] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [platformDepositAddress, setPlatformDepositAddress] = useState('')

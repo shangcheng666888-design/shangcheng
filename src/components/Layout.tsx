@@ -242,7 +242,7 @@ const Layout: React.FC = () => {
               type="button"
               className="header-icon-button header-icon-button--service"
               aria-label={lang === 'zh' ? '客服' : 'Customer service'}
-              onClick={openCrispChat}
+              onClick={() => openCrispChat()}
             >
               <img
                 src={serviceIcon}
@@ -524,7 +524,7 @@ const Layout: React.FC = () => {
                 <button
                   type="button"
                   className="footer-nav-link"
-                  onClick={openCrispChat}
+                  onClick={() => openCrispChat()}
                 >
                   {lang === 'zh' ? '在线客服' : 'Online support'}
                 </button>

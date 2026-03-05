@@ -227,7 +227,6 @@ export const CATEGORY_NAME_ZH: Record<string, string> = {
   'LadiesWatch': '女士手表',
   "Men'sWatch": '男士手表',
   'Jewelry Set': '珠宝套装',
-  'Jewelry': '珠宝',
   'LadiesBracelet': '女士手链',
   'Necklaces & Pendants': '项链与吊坠',
   'Tiaras & Brooches': '头饰与胸针',

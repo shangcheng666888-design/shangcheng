@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client'
 import { formatDateTime } from '../../utils/datetime'
@@ -586,7 +586,7 @@ const AdminUsers: React.FC = () => {
                                 <input
                                   type="checkbox"
                                   checked={addr.isDefault}
-                                  onChange={(e) => {
+                                  onChange={(_e) => {
                                     const next = (editForm.addresses || []).map((a, i) =>
                                       i === idx ? { ...a, isDefault: true } : { ...a, isDefault: false }
                                     )

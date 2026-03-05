@@ -38,9 +38,11 @@ function isAdminApiRequest(path: string): boolean {
   return p.startsWith('api/admin/') && !p.startsWith('api/admin/auth/login')
 }
 
+type ApiFetchOptions = Omit<RequestInit, 'body'> & { body?: object }
+
 export async function apiFetch<T = ApiRes>(
   path: string,
-  options?: RequestInit & { body?: object }
+  options?: ApiFetchOptions
 ): Promise<T> {
   const url = apiBase ? `${apiBase}${path.startsWith('/') ? '' : '/'}${path}` : path
   const { body, ...rest } = options ?? {}
@@ -52,10 +54,12 @@ export async function apiFetch<T = ApiRes>(
     const token = getAdminToken()
     if (token) (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
   }
+  const fetchBody: BodyInit | null | undefined =
+    body !== undefined ? JSON.stringify(body) : (rest as RequestInit).body
   const res = await fetch(url, {
     ...rest,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : rest.body,
+    body: fetchBody,
   })
   const data = (await res.json().catch(() => ({}))) as T & ApiRes
   if (!res.ok) {

@@ -66,7 +66,7 @@ const MerchantBackendSidebar: React.FC<MerchantBackendSidebarProps> = ({ collaps
           const isActive = item.path === '/merchant/wallet'
             ? location.pathname === '/merchant/wallet' || location.pathname.startsWith('/merchant/wallet/')
             : location.pathname === item.path
-          const handleHoverPrefetch: React.MouseEventHandler<HTMLAnchorElement> = (e) => {
+          const handleHoverPrefetch: React.MouseEventHandler<HTMLAnchorElement> = (_e) => {
             if (!shop?.id) return
             const path = item.path
             // 预取关键页面数据：订单、财务报表、运营计划
