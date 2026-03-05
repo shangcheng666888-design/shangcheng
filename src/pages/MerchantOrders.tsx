@@ -786,20 +786,6 @@ const MerchantOrders: React.FC = () => {
                     <dt>{lang === 'zh' ? '买家' : 'Buyer'}</dt>
                     <dd>{orderDetail.buyer}</dd>
                   </dl>
-                  <button
-                    type="button"
-                    className="merchant-orders-contact-btn"
-                    aria-label={lang === 'zh' ? '联系买家' : 'Contact buyer'}
-                    onClick={() => {}}
-                  >
-                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" className="merchant-orders-contact-icon">
-                      <path fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M4 2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8l-4 4V18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
-                      <path fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" d="M8 8h8M8 12h10" />
-                    </svg>
-                    <span className="merchant-orders-contact-btn-text">
-                      {lang === 'zh' ? '联系买家' : 'Contact buyer'}
-                    </span>
-                  </button>
                 </div>
               </section>
 

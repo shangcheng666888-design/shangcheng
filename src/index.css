@@ -16737,33 +16737,6 @@ button {
   min-width: 0;
 }
 
-.merchant-orders-contact-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  cursor: pointer;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.merchant-orders-contact-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.merchant-orders-contact-btn svg {
-  flex-shrink: 0;
-}
-
-.merchant-orders-contact-btn-text {
-  white-space: nowrap;
-}
-
 .merchant-orders-detail-actions {
   display: flex;
   flex-wrap: wrap;
