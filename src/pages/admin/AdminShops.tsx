@@ -56,42 +56,56 @@ const AdminShops: React.FC = () => {
   const [banConfirmOpen, setBanConfirmOpen] = useState(false)
   const { showToast } = useToast()
 
-  const fetchShops = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await api.get<{ list: Array<Shop & { visits?: number }> }>('/api/shops')
-      const list = Array.isArray(res.list)
-        ? res.list.map((s) => ({
-            ...s,
-            visits: typeof s.visits === 'number' ? s.visits : 0,
-          }))
-        : []
-      setShops(list)
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : '加载店铺列表失败', 'error')
-      setShops([])
-    } finally {
-      setLoading(false)
-    }
-  }, [showToast])
+  const fetchShops = useCallback(
+    async (mode: 'normal' | 'silent' = 'normal') => {
+      if (mode === 'normal') setLoading(true)
+      try {
+        const res = await api.get<{ list: Array<Shop & { visits?: number }> }>('/api/shops')
+        const list = Array.isArray(res.list)
+          ? res.list.map((s) => ({
+              ...s,
+              visits: typeof s.visits === 'number' ? s.visits : 0,
+            }))
+          : []
+        setShops(list)
+      } catch (e) {
+        if (mode === 'normal') {
+          showToast(e instanceof Error ? e.message : '加载店铺列表失败', 'error')
+          setShops([])
+        }
+        // 静默轮询失败时不打断当前界面，也不提示错误
+      } finally {
+        if (mode === 'normal') setLoading(false)
+      }
+    },
+    [showToast],
+  )
 
   useEffect(() => {
-    fetchShops()
+    fetchShops('normal')
   }, [fetchShops])
 
   useEffect(() => {
     const onVisible = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchShops()
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        // 页面重新可见时做一次静默刷新
+        fetchShops('silent')
+      }
     }
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVisible)
     }
-    const timer = window.setInterval(fetchShops, 5000)
+    const timer = window.setInterval(() => {
+      // 静默轮询：仅在页面可见且未打开详情/编辑时后台刷新
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+      if (detailShop || editForm) return
+      void fetchShops('silent')
+    }, 10000)
     return () => {
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible)
       window.clearInterval(timer)
     }
-  }, [fetchShops])
+  }, [detailShop, editForm, fetchShops])
 
   const filtered = useMemo(() => {
     let list = shops
