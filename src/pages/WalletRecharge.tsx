@@ -26,23 +26,46 @@ const WalletRecharge: React.FC = () => {
     }
   }
   const [amount, setAmount] = useState('')
+  const [currency, setCurrency] = useState<'USDT' | 'BTC' | 'ETH'>('USDT')
+  const [network, setNetwork] = useState<'ETH' | 'BTC' | 'TRC20'>('TRC20')
   const [transactionNo, setTransactionNo] = useState('')
   const { showToast } = useToast()
   const [tradePwdModalOpen, setTradePwdModalOpen] = useState(false)
   const [tradePwd, setTradePwd] = useState('')
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const [platformPayment, setPlatformPayment] = useState<{ receiveAddress: string; receiveQrUrl: string }>({ receiveAddress: '', receiveQrUrl: '' })
+  type PlatformPaymentConfig = {
+    receiveAddress: string
+    receiveQrUrl: string
+    ethAddress?: string
+    btcAddress?: string
+    trc20Address?: string
+  }
+  const [platformPayment, setPlatformPayment] = useState<PlatformPaymentConfig>({
+    receiveAddress: '',
+    receiveQrUrl: '',
+  })
 
   useEffect(() => {
-    api.get<{ receiveAddress: string; receiveQrUrl: string }>('/api/platform-payment-config').then((data) => {
-      setPlatformPayment({
-        receiveAddress: data.receiveAddress ?? '',
-        receiveQrUrl: data.receiveQrUrl ?? '',
+    api
+      .get<PlatformPaymentConfig>('/api/platform-payment-config')
+      .then((data) => {
+        setPlatformPayment({
+          receiveAddress: data.receiveAddress ?? '',
+          receiveQrUrl: data.receiveQrUrl ?? '',
+          ethAddress: data.ethAddress ?? '',
+          btcAddress: data.btcAddress ?? '',
+          trc20Address: data.trc20Address ?? '',
+        })
       })
-    }).catch(() => {})
+      .catch(() => {})
   }, [])
 
-  const depositAddress = platformPayment.receiveAddress
+  const depositAddress = (() => {
+    if (network === 'ETH') return platformPayment.ethAddress || platformPayment.receiveAddress
+    if (network === 'BTC') return platformPayment.btcAddress || platformPayment.receiveAddress
+    // 默认 TRC20
+    return platformPayment.trc20Address || platformPayment.receiveAddress
+  })()
 
   const tradePwdChars = tradePwd.padEnd(6, ' ').slice(0, 6).split('')
   const amountNum = parseFloat(amount)
@@ -192,8 +215,20 @@ const WalletRecharge: React.FC = () => {
                   {lang === 'zh' ? '充值币种' : 'Top‑up currency'}
                 </label>
                 <div className="wallet-recharge-select-wrap">
-                  <select className="wallet-recharge-select" defaultValue="USDT">
+                  <select
+                    className="wallet-recharge-select"
+                    value={currency}
+                    onChange={(e) => {
+                      const v = e.target.value as 'USDT' | 'BTC' | 'ETH'
+                      setCurrency(v)
+                      if (v === 'BTC') setNetwork('BTC')
+                      else if (v === 'ETH') setNetwork('ETH')
+                      else setNetwork('TRC20')
+                    }}
+                  >
                     <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
                   </select>
                   <span className="wallet-recharge-select-caret" aria-hidden>
                     ▾
@@ -206,8 +241,14 @@ const WalletRecharge: React.FC = () => {
                   {lang === 'zh' ? '区块链网络' : 'Blockchain network'}
                 </label>
                 <div className="wallet-recharge-select-wrap">
-                  <select className="wallet-recharge-select" defaultValue="USDT-TRC20">
-                    <option value="USDT-TRC20">USDT-TRC20</option>
+                  <select
+                    className="wallet-recharge-select"
+                    value={network}
+                    onChange={(e) => setNetwork(e.target.value as 'ETH' | 'BTC' | 'TRC20')}
+                  >
+                    <option value="ETH">{lang === 'zh' ? 'ETH 网络' : 'ETH network'}</option>
+                    <option value="BTC">{lang === 'zh' ? 'BTC 网络' : 'BTC network'}</option>
+                    <option value="TRC20">{lang === 'zh' ? 'USDT‑TRC20 网络' : 'USDT‑TRC20 network'}</option>
                   </select>
                   <span className="wallet-recharge-select-caret" aria-hidden>
                     ▾

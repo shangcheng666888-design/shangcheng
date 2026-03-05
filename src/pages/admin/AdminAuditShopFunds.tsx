@@ -42,9 +42,12 @@ const AdminAuditShopFunds: React.FC = () => {
   const [platformDepositAddress, setPlatformDepositAddress] = useState('')
 
   useEffect(() => {
-    api.get<{ receiveAddress: string }>('/api/admin/platform-payment-config').then((data) => {
-      setPlatformDepositAddress(data.receiveAddress ?? '')
-    }).catch(() => {})
+    api
+      .get<{ receiveAddress: string }>('/api/admin/platform-payment-config')
+      .then((data) => {
+        setPlatformDepositAddress(data.receiveAddress ?? '')
+      })
+      .catch(() => {})
   }, [])
 
   const formatApplyTime = (iso: string) => formatDateTime(iso)

@@ -62,6 +62,9 @@ const AdminSystem: React.FC = () => {
   const [saving, setSaving] = useState(false)
   const [receiveAddressInput, setReceiveAddressInput] = useState('')
   const [receiveQrUrlInput, setReceiveQrUrlInput] = useState('')
+  const [ethAddressInput, setEthAddressInput] = useState('')
+  const [btcAddressInput, setBtcAddressInput] = useState('')
+  const [trc20AddressInput, setTrc20AddressInput] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { showToast } = useToast()
 
@@ -102,12 +105,15 @@ const AdminSystem: React.FC = () => {
   useEffect(() => {
     let cancelled = false
     api
-      .get<Config>('/api/admin/platform-payment-config')
+      .get<Config & { ethAddress?: string; btcAddress?: string; trc20Address?: string }>('/api/admin/platform-payment-config')
       .then((data) => {
         if (cancelled) return
         setConfig({ receiveAddress: data.receiveAddress ?? '', receiveQrUrl: data.receiveQrUrl ?? '' })
         setReceiveAddressInput(data.receiveAddress ?? '')
         setReceiveQrUrlInput(data.receiveQrUrl ?? '')
+        setEthAddressInput(data.ethAddress ?? '')
+        setBtcAddressInput(data.btcAddress ?? '')
+        setTrc20AddressInput(data.trc20Address ?? '')
       })
       .catch(() => {
         if (!cancelled) showToast('加载配置失败', 'error')
@@ -186,7 +192,13 @@ const AdminSystem: React.FC = () => {
     }
     setSaving(true)
     api
-      .put('/api/admin/platform-payment-config', { receiveAddress: addr, receiveQrUrl: qr })
+      .put('/api/admin/platform-payment-config', {
+        receiveAddress: addr,
+        receiveQrUrl: qr,
+        ethAddress: ethAddressInput.trim(),
+        btcAddress: btcAddressInput.trim(),
+        trc20Address: trc20AddressInput.trim(),
+      })
       .then(() => {
         setConfig({ receiveAddress: addr, receiveQrUrl: qr })
         showToast('保存成功')
