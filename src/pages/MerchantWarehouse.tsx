@@ -596,7 +596,6 @@ const MerchantWarehouse: React.FC = () => {
         setProcureDetailItem(null)
         setProcurePricingItem(null)
         setProcurePricingInput('')
-        setTab('mine')
         loadMineProducts()
       })
       .catch(() => {
