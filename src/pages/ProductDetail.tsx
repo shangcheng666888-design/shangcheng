@@ -33,6 +33,14 @@ interface ShopInfo {
   productCount?: number
 }
 
+interface ShopRecommendedProduct {
+  listingId: string
+  productId: string
+  title: string
+  image: string
+  price: number
+}
+
 interface ListingDetail {
   id: string
   listingId: string
@@ -71,6 +79,7 @@ const ProductDetail: React.FC = () => {
   /** 规格选择：属性标签 -> 原始值，用于下拉框 */
   const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({})
   const [shopInfo, setShopInfo] = useState<ShopInfo | null>(null)
+  const [shopRecommendations, setShopRecommendations] = useState<ShopRecommendedProduct[]>([])
   const navigate = useNavigate()
   const { addItem } = useCart()
   const { showToast } = useToast()
@@ -87,6 +96,7 @@ const ProductDetail: React.FC = () => {
     setLoading(true)
     setError(null)
     setShopInfo(null)
+    setShopRecommendations([])
     api
       .get<ListingDetail>(`/api/listings/${encodeURIComponent(id)}`)
       .then((res) => {
@@ -122,15 +132,29 @@ const ProductDetail: React.FC = () => {
             .catch(() => {
               if (!cancelled) setShopInfo(null)
             })
+          api
+            .get<{ list?: ShopRecommendedProduct[] }>(
+              `/api/shops/${encodeURIComponent(sid)}/recommendations`,
+            )
+            .then((r) => {
+              if (cancelled) return
+              const list = Array.isArray(r.list) ? r.list : []
+              setShopRecommendations(list)
+            })
+            .catch(() => {
+              if (!cancelled) setShopRecommendations([])
+            })
         } else {
           setShopInfo(null)
+          setShopRecommendations([])
         }
       })
       .catch((e) => {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : '加载失败')
           setListing(null)
-        setShopInfo(null)
+          setShopInfo(null)
+          setShopRecommendations([])
         }
       })
       .finally(() => {
@@ -570,17 +594,41 @@ const ProductDetail: React.FC = () => {
             {lang === 'zh' ? '推荐产品' : 'Recommended products'}
           </h3>
           <div className="product-detail-shop-recommend-list">
-            <Link to="/products" className="product-detail-shop-recommend-item">
-              <div className="product-detail-shop-recommend-thumb"><img src={productImage} alt="" /></div>
-              <div className="product-detail-shop-recommend-info">
-                <div className="product-detail-shop-recommend-name">
-                  {lang === 'zh'
-                    ? '更多商品请返回列表'
-                    : 'For more products please go back to the list'}
+            {shopRecommendations.length > 0 ? (
+              shopRecommendations.map((p) => (
+                <Link
+                  key={p.listingId}
+                  to={`/products/${encodeURIComponent(p.listingId)}`}
+                  className="product-detail-shop-recommend-item"
+                >
+                  <div className="product-detail-shop-recommend-thumb">
+                    <img src={p.image || productImage} alt={p.title} />
+                  </div>
+                  <div className="product-detail-shop-recommend-info">
+                    <div className="product-detail-shop-recommend-name">
+                      {p.title || (lang === 'zh' ? '商品' : 'Product')}
+                    </div>
+                    <div className="product-detail-shop-recommend-price">
+                      {p.price > 0 ? `$${p.price.toFixed(2)}` : '—'}
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <Link to="/products" className="product-detail-shop-recommend-item">
+                <div className="product-detail-shop-recommend-thumb">
+                  <img src={productImage} alt="" />
                 </div>
-                <div className="product-detail-shop-recommend-price">—</div>
-              </div>
-            </Link>
+                <div className="product-detail-shop-recommend-info">
+                  <div className="product-detail-shop-recommend-name">
+                    {lang === 'zh'
+                      ? '更多商品请返回列表'
+                      : 'For more products please go back to the list'}
+                  </div>
+                  <div className="product-detail-shop-recommend-price">—</div>
+                </div>
+              </Link>
+            )}
           </div>
         </div>
       </aside>
