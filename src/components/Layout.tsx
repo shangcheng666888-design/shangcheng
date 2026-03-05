@@ -47,6 +47,7 @@ const Layout: React.FC = () => {
   const [logoutSuccessOpen, setLogoutSuccessOpen] = useState(false)
   const [isAuthed, setIsAuthed] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
+  const [headerSearchKeyword, setHeaderSearchKeyword] = useState('')
   const langSwitcherRef = useRef<HTMLDivElement>(null)
   const lastScrollY = useRef(0)
 
@@ -125,6 +126,15 @@ const Layout: React.FC = () => {
     setLogoutSuccessOpen(true)
   }
 
+  const handleHeaderSearchSubmit = () => {
+    const q = headerSearchKeyword.trim()
+    if (!q) {
+      navigate('/products')
+      return
+    }
+    navigate(`/products?keyword=${encodeURIComponent(q)}`)
+  }
+
   const handleGoAccount = () => {
     if (!authUser) return
     navigate('/account')
@@ -179,8 +189,20 @@ const Layout: React.FC = () => {
                 placeholder={
                   lang === 'zh' ? '找货源/商品/供应商/求购' : 'Search products / suppliers / requests'
                 }
+                value={headerSearchKeyword}
+                onChange={(e) => setHeaderSearchKeyword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleHeaderSearchSubmit()
+                  }
+                }}
               />
-              <button type="button" className="search-button">
+              <button
+                type="button"
+                className="search-button"
+                onClick={handleHeaderSearchSubmit}
+              >
                 {lang === 'zh' ? '搜索' : 'Search'}
               </button>
             </div>
