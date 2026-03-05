@@ -8,8 +8,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router')) return 'react-vendor'
-          if (id.includes('node_modules/recharts')) return 'recharts'
+          // recharts 与 react 同批加载，避免生产环境 "Cannot set properties of undefined (setting 'Activity')"
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router') || id.includes('node_modules/recharts')) return 'react-vendor'
           if (id.includes('node_modules')) return 'vendor'
         },
         chunkFileNames: 'assets/[name]-[hash].js',
