@@ -46,6 +46,7 @@ const MerchantDashboard: React.FC = () => {
   const [goodRate, setGoodRate] = useState(0)
   const [creditScore, setCreditScore] = useState(0)
   const [followers, setFollowers] = useState(0)
+  const [visitsTotal, setVisitsTotal] = useState(0)
   const [todayOrders, setTodayOrders] = useState(0)
   const [todaySales, setTodaySales] = useState(0)
   const [todayProfit, setTodayProfit] = useState(0)
@@ -87,6 +88,7 @@ const MerchantDashboard: React.FC = () => {
           creditScore?: number
           goodRate?: number
           followers?: number
+          visitsTotal?: number
           todayOrders?: number
           todaySales?: number
           todayProfit?: number
@@ -101,6 +103,7 @@ const MerchantDashboard: React.FC = () => {
         setCreditScore(Number(cached.creditScore ?? 0))
         setGoodRate(Number(cached.goodRate ?? 0))
         setFollowers(Number(cached.followers ?? 0))
+        setVisitsTotal(Number(cached.visitsTotal ?? 0))
         setTodayOrders(cached.todayOrders ?? 0)
         setTodaySales(Number(cached.todaySales ?? 0))
         setTodayProfit(Number(cached.todayProfit ?? 0))
@@ -125,6 +128,7 @@ const MerchantDashboard: React.FC = () => {
         const nextFollowers = Number(res.followers ?? 0)
         const rate = Number(res.goodRate ?? 0)
         const nextGoodRate = Number.isFinite(rate) ? Math.max(0, Math.min(100, rate)) : 0
+        const nextVisitsTotal = Number(res.visitsTotal ?? 0)
         const nextTodayOrders = res.todayOrders ?? 0
         const nextTodaySales = Number(res.todaySales ?? 0)
         const nextTodayProfit = Number(res.todayProfit ?? 0)
@@ -133,10 +137,14 @@ const MerchantDashboard: React.FC = () => {
         const labels = res.orderTrend?.labels ?? []
         const orders = res.orderTrend?.orders ?? []
         if (labels.length === 7 && orders.length === 7) {
+          // 将 30 日访客总数粗略平摊到 7 日趋势中，便于管理员通过后台「访问量」字段直接控制曲线高度
+          const visits30d = Math.max(0, Math.round(nextVisitsTotal))
+          const visits7d = Math.max(0, Math.round((visits30d / 30) * 7))
+          const visitsPerDay = visits7d > 0 ? Math.max(0, Math.round((visits7d / 7) * 10) / 10) : 0
           nextChart = labels.map((name, idx) => ({
             name,
             评分: nextGoodRate / 20,
-            访客: 0,
+            访客: visitsPerDay,
             订单: orders[idx] ?? 0,
           }))
         }
@@ -150,6 +158,7 @@ const MerchantDashboard: React.FC = () => {
         setCreditScore(nextCreditScore)
         setFollowers(nextFollowers)
         setGoodRate(nextGoodRate)
+        setVisitsTotal(nextVisitsTotal)
         setTodayOrders(nextTodayOrders)
         setTodaySales(nextTodaySales)
         setTodayProfit(nextTodayProfit)
@@ -169,6 +178,7 @@ const MerchantDashboard: React.FC = () => {
                 creditScore: nextCreditScore,
                 goodRate: nextGoodRate,
                 followers: nextFollowers,
+                visitsTotal: nextVisitsTotal,
                 todayOrders: nextTodayOrders,
                 todaySales: nextTodaySales,
                 todayProfit: nextTodayProfit,
@@ -204,6 +214,11 @@ const MerchantDashboard: React.FC = () => {
     lang === 'zh'
       ? '一眼看到小店的总体表现'
       : 'At‑a‑glance view of your shop health'
+
+  // 将后台可编辑的「访问量」字段解释为最近 30 日总访客数，便于管理员在店铺管理里随时调整
+  const visits30d = Math.max(0, Math.round(visitsTotal))
+  const visits7d = Math.max(0, Math.round((visits30d / 30) * 7))
+  const visitsToday = Math.max(0, Math.round(visits30d / 30))
 
   const formatXAxisLabel = (value: string | number): string => {
     const v = String(value)
@@ -352,19 +367,19 @@ const MerchantDashboard: React.FC = () => {
             {lang === 'zh' ? '流量概况' : 'Traffic overview'}
           </h3>
           <div className="merchant-dashboard-overview-row">
-            <span className="merchant-dashboard-overview-value">0</span>
+            <span className="merchant-dashboard-overview-value">{visitsToday}</span>
             <span className="merchant-dashboard-overview-label">
               {lang === 'zh' ? '今日访客数' : "Today's visitors"}
             </span>
           </div>
           <div className="merchant-dashboard-overview-row">
-            <span className="merchant-dashboard-overview-value">0</span>
+            <span className="merchant-dashboard-overview-value">{visits7d}</span>
             <span className="merchant-dashboard-overview-label">
               {lang === 'zh' ? '7日访客数' : '7‑day visitors'}
             </span>
           </div>
           <div className="merchant-dashboard-overview-row">
-            <span className="merchant-dashboard-overview-value">0</span>
+            <span className="merchant-dashboard-overview-value">{visits30d}</span>
             <span className="merchant-dashboard-overview-label">
               {lang === 'zh' ? '30日访客数' : '30‑day visitors'}
             </span>
