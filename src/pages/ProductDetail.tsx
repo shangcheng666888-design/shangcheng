@@ -307,6 +307,8 @@ const ProductDetail: React.FC = () => {
     )
   }
 
+  const displayedRecommendations = shopRecommendations.slice(0, 5)
+
   if (error || !listing) {
     return (
       <div className="page product-detail-page">
@@ -594,8 +596,8 @@ const ProductDetail: React.FC = () => {
             {lang === 'zh' ? '推荐产品' : 'Recommended products'}
           </h3>
           <div className="product-detail-shop-recommend-list">
-            {shopRecommendations.length > 0 ? (
-              shopRecommendations.map((p) => (
+            {displayedRecommendations.length > 0 ? (
+              displayedRecommendations.map((p) => (
                 <Link
                   key={p.listingId}
                   to={`/products/${encodeURIComponent(p.listingId)}`}
