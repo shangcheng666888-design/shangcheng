@@ -4855,10 +4855,32 @@ button {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* 首页推荐店铺：手机 2 列，最多 9 个 */
+  /* 首页推荐店铺：手机端改为横向轮播，一屏一张，避免挤压变形 */
   .home-shops-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
+    display: flex;
+    grid-template-columns: unset;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.25rem 0 0.5rem;
+    scrollbar-width: none;
+  }
+  .home-shops-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .home-shops-grid .shop-card {
+    flex: 0 0 85%;
+    min-width: 260px;
+    max-width: 320px;
+    scroll-snap-align: center;
+    box-sizing: border-box;
+  }
+  .home-shops-grid .home-section-empty {
+    flex: 0 0 100%;
+    min-width: 0;
   }
 
   .products-pagination {
