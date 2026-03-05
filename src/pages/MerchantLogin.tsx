@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import PhoneCodeSelect from '../components/PhoneCodeSelect'
 import serviceIcon from '../assets/kefu.png'
 import { openCrispChat } from '../utils/crispChat'
 import zhFlagIcon from '../assets/lang-zh.png'
@@ -12,15 +11,11 @@ const MerchantLogin: React.FC = () => {
   const navigate = useNavigate()
   const { lang, setLang } = useLang()
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'email' | 'phone'>('email')
-  const [selectedCode, setSelectedCode] = useState('+65')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({
     email: '',
-    phone: '',
     password: '',
   })
   const [submitError, setSubmitError] = useState('')
@@ -34,73 +29,57 @@ const MerchantLogin: React.FC = () => {
     return () => clearTimeout(t)
   }, [])
 
-  const isEmail = activeTab === 'email'
-
   const t = lang === 'zh'
     ? {
         title: '登录到你的帐户',
-        emailTab: '邮箱',
-        phoneTab: '手机号',
         emailLabel: '邮箱',
-        phoneLabel: '手机号',
         passwordLabel: '密码',
         emailPlaceholder: '请输入邮箱',
-        phonePlaceholder: '请输入手机号',
         passwordPlaceholder: '请输入你的密码',
         loginButton: '登录',
         forgotPassword: '忘记密码?',
         langText: '简体中文',
         emailRequired: '请输入邮箱',
         emailFormat: '请输入正确的邮箱格式',
-        phoneRequired: '请输入手机号',
         passwordRequired: '请输入密码',
         passwordFormat: '密码需为 6-22 位字母和数字组合',
       }
     : {
         title: 'Log in to your account',
-        emailTab: 'Email',
-        phoneTab: 'Phone',
         emailLabel: 'Email',
-        phoneLabel: 'Phone number',
         passwordLabel: 'Password',
         emailPlaceholder: 'Please enter email',
-        phonePlaceholder: 'Please enter phone number',
         passwordPlaceholder: 'Please enter your password',
         loginButton: 'Log in',
         forgotPassword: 'Forgot password?',
         langText: 'English',
         emailRequired: 'Please enter email',
         emailFormat: 'Please enter a valid email address',
-        phoneRequired: 'Please enter phone number',
         passwordRequired: 'Please enter password',
         passwordFormat: 'Password must be 6-22 characters with letters and numbers',
       }
 
   const validate = () => {
-    const next = { email: '', phone: '', password: '' }
+    const next = { email: '', password: '' }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const pwdRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,22}$/
 
-    if (isEmail) {
-      if (!email.trim()) next.email = t.emailRequired
-      else if (!emailRegex.test(email.trim())) next.email = t.emailFormat
-    } else {
-      if (!phone.trim()) next.phone = t.phoneRequired
-    }
+    if (!email.trim()) next.email = t.emailRequired
+    else if (!emailRegex.test(email.trim())) next.email = t.emailFormat
 
     if (!password) next.password = t.passwordRequired
     else if (!pwdRegex.test(password)) next.password = t.passwordFormat
 
     setErrors(next)
     setSubmitError('')
-    return !next.email && !next.phone && !next.password
+    return !next.email && !next.password
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitError('')
     if (!validate()) return
-    const value = isEmail ? email.trim() : `${selectedCode}${phone.trim()}`
+    const value = email.trim()
     setSubmitting(true)
     try {
       const res = await api.post<{ success?: boolean; user?: { id: string; account: string; balance: number; shopId: string | null } }>('/api/auth/shop-login', { value, password })
@@ -176,114 +155,45 @@ const MerchantLogin: React.FC = () => {
       <div className="merchant-login-card">
         <h1 className="merchant-login-title">{t.title}</h1>
 
-        <div className="merchant-login-tabs">
-          <button
-            type="button"
-            className={`merchant-login-tab${isEmail ? ' merchant-login-tab--active' : ''}`}
-            onClick={() => {
-              setActiveTab('email')
-              setErrors((prev) => ({ ...prev, email: '', phone: '' }))
-              setSubmitError('')
-            }}
-          >
-            {t.emailTab}
-          </button>
-          <button
-            type="button"
-            className={`merchant-login-tab${!isEmail ? ' merchant-login-tab--active' : ''}`}
-            onClick={() => {
-              setActiveTab('phone')
-              setErrors((prev) => ({ ...prev, email: '', phone: '' }))
-              setSubmitError('')
-            }}
-          >
-            {t.phoneTab}
-          </button>
-        </div>
-
         <form className="merchant-login-form" onSubmit={handleSubmit}>
-          {isEmail ? (
-            <div className="merchant-login-field">
-              <label className="merchant-login-label">
-                <span className="merchant-login-required">*</span> {t.emailLabel}
-              </label>
-              <div className="merchant-login-input-wrap">
-                <span className="merchant-login-input-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="18" height="18">
-                    <path
-                      d="M4 4h16a1 1 0 0 1 1 1v14H3V5a1 1 0 0 1 1-1z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M5 6l7 6 7-6"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-                <input
-                  className={`merchant-login-input${errors.email ? ' merchant-login-input--error' : ''}`}
-                  placeholder={t.emailPlaceholder}
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value)
-                    if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
-                    setSubmitError('')
-                  }}
-                />
-              </div>
-              {errors.email && <p className="merchant-login-error-text">{errors.email}</p>}
+          <div className="merchant-login-field">
+            <label className="merchant-login-label">
+              <span className="merchant-login-required">*</span> {t.emailLabel}
+            </label>
+            <div className="merchant-login-input-wrap">
+              <span className="merchant-login-input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <path
+                    d="M4 4h16a1 1 0 0 1 1 1v14H3V5a1 1 0 0 1 1-1z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M5 6l7 6 7-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              <input
+                className={`merchant-login-input${errors.email ? ' merchant-login-input--error' : ''}`}
+                placeholder={t.emailPlaceholder}
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
+                  setSubmitError('')
+                }}
+              />
             </div>
-          ) : (
-            <div className="merchant-login-field">
-              <label className="merchant-login-label">
-                <span className="merchant-login-required">*</span> {t.phoneLabel}
-              </label>
-              <div
-                className={`merchant-login-phone-row${
-                  errors.phone ? ' merchant-login-phone-row--error' : ''
-                }`}
-              >
-                <span className="merchant-login-input-icon merchant-login-input-icon--phone" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="18" height="18">
-                    <rect
-                      x="7"
-                      y="3"
-                      width="10"
-                      height="18"
-                      rx="2"
-                      ry="2"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                    />
-                    <circle cx="12" cy="17" r="0.8" fill="currentColor" />
-                  </svg>
-                </span>
-                <div className="merchant-login-phone-code">
-                  <PhoneCodeSelect value={selectedCode} onChange={setSelectedCode} />
-                </div>
-                <input
-                  className="merchant-login-input merchant-login-input--plain merchant-login-input--phone"
-                  placeholder={t.phonePlaceholder}
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value)
-                    if (errors.phone) setErrors((prev) => ({ ...prev, phone: '' }))
-                    setSubmitError('')
-                  }}
-                />
-              </div>
-              {errors.phone && <p className="merchant-login-error-text">{errors.phone}</p>}
-            </div>
-          )}
+            {errors.email && <p className="merchant-login-error-text">{errors.email}</p>}
+          </div>
 
           <div className="merchant-login-field">
             <label className="merchant-login-label">

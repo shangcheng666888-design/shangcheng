@@ -8,22 +8,17 @@ import iconZhengpin from '../assets/zhifu.png'
 import iconTuihuo from '../assets/tuihuo.png'
 import iconYunshu from '../assets/yunshu.png'
 import iconZhifu from '../assets/zhengping.png'
-import PhoneCodeSelect from '../components/PhoneCodeSelect'
 import { api } from '../api/client'
 import { updateCrispUser } from '../utils/crispInit'
 
 const Register: React.FC = () => {
-  const [method, setMethod] = useState<'email' | 'phone'>('email')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [phoneCode, setPhoneCode] = useState('+65')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState({
     email: '',
-    phone: '',
     password: '',
     confirmPassword: '',
   })
@@ -33,16 +28,12 @@ const Register: React.FC = () => {
   const { lang } = useLang()
 
   const validate = () => {
-    const next = { email: '', phone: '', password: '', confirmPassword: '' }
+    const next = { email: '', password: '', confirmPassword: '' }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const pwdRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,22}$/
 
-    if (method === 'email') {
-      if (!email.trim()) next.email = lang === 'zh' ? '请输入邮箱' : 'Please enter your email'
-      else if (!emailRegex.test(email.trim())) next.email = lang === 'zh' ? '邮箱格式不正确' : 'Invalid email format'
-    } else {
-      if (!phone.trim()) next.phone = lang === 'zh' ? '请输入手机号' : 'Please enter your phone number'
-    }
+    if (!email.trim()) next.email = lang === 'zh' ? '请输入邮箱' : 'Please enter your email'
+    else if (!emailRegex.test(email.trim())) next.email = lang === 'zh' ? '邮箱格式不正确' : 'Invalid email format'
 
     if (!password) next.password = lang === 'zh' ? '请输入密码' : 'Please enter your password'
     else if (!pwdRegex.test(password)) next.password = lang === 'zh' ? '密码需为 6-22 位字母和数字组合' : 'Password must be 6-22 characters with letters and numbers'
@@ -51,43 +42,43 @@ const Register: React.FC = () => {
     else if (confirmPassword !== password) next.confirmPassword = lang === 'zh' ? '两次输入的密码不一致' : 'Passwords do not match'
 
     setErrors(next)
-    return !next.email && !next.phone && !next.password && !next.confirmPassword
+    return !next.email && !next.password && !next.confirmPassword
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    const account = method === 'email' ? email.trim() : `${phoneCode}${phone.trim()}`
+    const account = email.trim()
     setLoading(true)
-    setErrors({ email: '', phone: '', password: '', confirmPassword: '' })
+    setErrors({ email: '', password: '', confirmPassword: '' })
     try {
       const res = await api.post<{ success?: boolean; user?: { id: string; account: string; balance: number; shopId: string | null; avatar: string | null } }>(
         '/api/auth/register',
-        { account, password, type: method === 'email' ? 'email' : 'phone' }
+        { account, password, type: 'email' }
       )
       if (res.success && res.user) {
         window.localStorage.setItem('authUser', JSON.stringify({
-          type: method === 'email' ? 'email' as const : 'phone' as const,
+          type: 'email' as const,
           value: res.user.account,
           id: res.user.id,
           balance: res.user.balance,
           shopId: res.user.shopId,
           avatar: res.user.avatar ?? null,
-          ...(method === 'email' && { email: email.trim() }),
+          email: email.trim(),
         }))
         updateCrispUser()
         setSuccessOpen(true)
         setTimeout(() => navigate('/'), 1200)
       } else {
-        setErrors((prev) => ({ ...prev, [method === 'email' ? 'email' : 'phone']: lang === 'zh' ? '注册失败，请重试' : 'Registration failed, please try again' }))
+        setErrors((prev) => ({ ...prev, email: lang === 'zh' ? '注册失败，请重试' : 'Registration failed, please try again' }))
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : (lang === 'zh' ? '网络错误，请稍后重试' : 'Network error, please try again later')
       const isDuplicate = /已注册|重复|exists|already registered/i.test(msg) || msg.includes('409')
       const fieldMsg = isDuplicate
-        ? (method === 'email' ? (lang === 'zh' ? '该邮箱已注册，请直接登录' : 'This email is already registered, please log in') : (lang === 'zh' ? '该手机号已注册，请直接登录' : 'This phone number is already registered, please log in'))
+        ? (lang === 'zh' ? '该邮箱已注册，请直接登录' : 'This email is already registered, please log in')
         : msg
-      setErrors((prev) => ({ ...prev, [method === 'email' ? 'email' : 'phone']: fieldMsg }))
+      setErrors((prev) => ({ ...prev, email: fieldMsg }))
     } finally {
       setLoading(false)
     }
@@ -106,72 +97,24 @@ const Register: React.FC = () => {
             <span className="login-auth-current">{lang === 'zh' ? '注册' : 'Sign up'}</span>
           </div>
           <h1 className="login-title">{lang === 'zh' ? '注册' : 'Sign up'}</h1>
-          <div className="login-tabs">
-            <button
-              type="button"
-              className={`login-tab${method === 'email' ? ' login-tab--active' : ''}`}
-              onClick={() => {
-                setMethod('email')
-                setErrors((prev) => ({ ...prev, email: '', phone: '' }))
-              }}
-            >
-              {lang === 'zh' ? '邮箱' : 'Email'}
-            </button>
-            <button
-              type="button"
-              className={`login-tab${method === 'phone' ? ' login-tab--active' : ''}`}
-              onClick={() => {
-                setMethod('phone')
-                setErrors((prev) => ({ ...prev, email: '', phone: '' }))
-              }}
-            >
-              {lang === 'zh' ? '手机号' : 'Phone'}
-            </button>
-          </div>
-
           <form className="login-form" onSubmit={handleSubmit}>
-            {method === 'email' ? (
-              <div className="login-form-field">
-                <label className="login-label">
-                  <span className="login-label-required">*</span> {lang === 'zh' ? '邮箱' : 'Email'}
-                </label>
-                <input
-                  className={`login-input${errors.email ? ' login-input--error' : ''}`}
-                  placeholder={lang === 'zh' ? '请设置账户邮箱' : 'Enter your email'}
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value)
-                    if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
-                  }}
-                />
-                <div className="login-error-slot">
-                  {errors.email && <p className="login-error-text">{errors.email}</p>}
-                </div>
+            <div className="login-form-field">
+              <label className="login-label">
+                <span className="login-label-required">*</span> {lang === 'zh' ? '邮箱' : 'Email'}
+              </label>
+              <input
+                className={`login-input${errors.email ? ' login-input--error' : ''}`}
+                placeholder={lang === 'zh' ? '请设置账户邮箱' : 'Enter your email'}
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
+                }}
+              />
+              <div className="login-error-slot">
+                {errors.email && <p className="login-error-text">{errors.email}</p>}
               </div>
-            ) : (
-              <div className="login-form-field">
-                <label className="login-label">
-                  <span className="login-label-required">*</span> {lang === 'zh' ? '手机号码' : 'Phone number'}
-                </label>
-                <div className="login-phone-combo-wrap">
-                  <div className="login-phone-combo">
-                    <PhoneCodeSelect value={phoneCode} onChange={setPhoneCode} />
-                    <input
-                      className={`login-phone-input${errors.phone ? ' login-input--error' : ''}`}
-                      placeholder={lang === 'zh' ? '请设置账户手机号' : 'Enter your phone number'}
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value)
-                        if (errors.phone) setErrors((prev) => ({ ...prev, phone: '' }))
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="login-error-slot">
-                  {errors.phone && <p className="login-error-text">{errors.phone}</p>}
-                </div>
-              </div>
-            )}
+            </div>
 
             <div className="login-form-field">
               <label className="login-label">

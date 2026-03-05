@@ -9,20 +9,15 @@ import iconZhengpin from '../assets/zhifu.png'
 import iconTuihuo from '../assets/tuihuo.png'
 import iconYunshu from '../assets/yunshu.png'
 import iconZhifu from '../assets/zhengping.png'
-import PhoneCodeSelect from '../components/PhoneCodeSelect'
 
 const Login: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'email' | 'phone'>('email')
   const [showPassword, setShowPassword] = useState(false)
-  const [selectedCode, setSelectedCode] = useState('+65')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [successOpen, setSuccessOpen] = useState(false)
   const [forgotOpen, setForgotOpen] = useState(false)
   const [errors, setErrors] = useState({
     email: '',
-    phone: '',
     password: '',
   })
   const [loading, setLoading] = useState(false)
@@ -31,46 +26,40 @@ const Login: React.FC = () => {
   const { lang } = useLang()
   const from = (location.state as { from?: { pathname: string; state?: unknown } } | null)?.from
 
-  const isEmail = activeTab === 'email'
-
   const validate = () => {
-    const next = { email: '', phone: '', password: '' }
+    const next = { email: '', password: '' }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const pwdRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,22}$/
 
-    if (isEmail) {
-      if (!email.trim()) next.email = lang === 'zh' ? '请输入邮箱' : 'Please enter your email'
-      else if (!emailRegex.test(email.trim())) next.email = lang === 'zh' ? '邮箱格式不正确' : 'Invalid email format'
-    } else {
-      if (!phone.trim()) next.phone = lang === 'zh' ? '请输入手机号' : 'Please enter your phone number'
-    }
+    if (!email.trim()) next.email = lang === 'zh' ? '请输入邮箱' : 'Please enter your email'
+    else if (!emailRegex.test(email.trim())) next.email = lang === 'zh' ? '邮箱格式不正确' : 'Invalid email format'
 
     if (!password) next.password = lang === 'zh' ? '请输入密码' : 'Please enter your password'
     else if (!pwdRegex.test(password)) next.password = lang === 'zh' ? '密码需为 6-22 位字母和数字组合' : 'Password must be 6-22 characters with letters and numbers'
 
     setErrors(next)
-    return !next.email && !next.phone && !next.password
+    return !next.email && !next.password
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    const value = isEmail ? email.trim() : `${selectedCode}${phone.trim()}`
+    const value = email.trim()
     setLoading(true)
     try {
       const res = await api.post<{ success: boolean; user?: { id: string; account: string; balance: number; shopId: string | null; avatar: string | null } }>(
         '/api/auth/login',
-        { type: isEmail ? 'email' : 'phone', value, password }
+        { type: 'email', value, password }
       )
       if (res.success && res.user) {
         window.localStorage.setItem('authUser', JSON.stringify({
-          type: isEmail ? 'email' as const : 'phone' as const,
+          type: 'email' as const,
           value: res.user.account,
           id: res.user.id,
           balance: res.user.balance,
           shopId: res.user.shopId,
           avatar: res.user.avatar ?? null,
-          ...(isEmail && { email: email.trim() }),
+          email: email.trim(),
         }))
         updateCrispUser()
         setSuccessOpen(true)
@@ -104,72 +93,25 @@ const Login: React.FC = () => {
             <Link to="/register" className="login-auth-link">{lang === 'zh' ? '注册' : 'Sign up'}</Link>
           </div>
           <h1 className="login-title">{lang === 'zh' ? '登录' : 'Log in'}</h1>
-          <div className="login-tabs">
-            <button
-              type="button"
-              className={`login-tab${isEmail ? ' login-tab--active' : ''}`}
-              onClick={() => {
-                setActiveTab('email')
-                setErrors((prev) => ({ ...prev, email: '', phone: '' }))
-              }}
-            >
-              {lang === 'zh' ? '邮箱' : 'Email'}
-            </button>
-            <button
-              type="button"
-              className={`login-tab${!isEmail ? ' login-tab--active' : ''}`}
-              onClick={() => {
-                setActiveTab('phone')
-                setErrors((prev) => ({ ...prev, email: '', phone: '' }))
-              }}
-            >
-              {lang === 'zh' ? '手机号' : 'Phone'}
-            </button>
-          </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
-            {isEmail ? (
-              <div className="login-form-field">
-                <label className="login-label">
-                  <span className="login-label-required">*</span> {lang === 'zh' ? '邮箱' : 'Email'}
-                </label>
-                <input
-                  className={`login-input${errors.email ? ' login-input--error' : ''}`}
-                  placeholder={lang === 'zh' ? '请输入账户邮箱' : 'Enter your email'}
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value)
-                    if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
-                  }}
-                />
-                <div className="login-error-slot">
-                  {errors.email && <p className="login-error-text">{errors.email}</p>}
-                </div>
+            <div className="login-form-field">
+              <label className="login-label">
+                <span className="login-label-required">*</span> {lang === 'zh' ? '邮箱' : 'Email'}
+              </label>
+              <input
+                className={`login-input${errors.email ? ' login-input--error' : ''}`}
+                placeholder={lang === 'zh' ? '请输入账户邮箱' : 'Enter your email'}
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
+                }}
+              />
+              <div className="login-error-slot">
+                {errors.email && <p className="login-error-text">{errors.email}</p>}
               </div>
-            ) : (
-              <div className="login-form-field">
-                <label className="login-label">
-                  <span className="login-label-required">*</span> {lang === 'zh' ? '手机号码' : 'Phone number'}
-                </label>
-                <div className="login-phone-combo-wrap">
-                  <div className="login-phone-combo">
-                    <PhoneCodeSelect value={selectedCode} onChange={setSelectedCode} />
-                    <input
-                      className={`login-phone-input${errors.phone ? ' login-input--error' : ''}`}
-                      placeholder={lang === 'zh' ? '请输入账户手机号' : 'Enter your phone number'}
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value)
-                        if (errors.phone) setErrors((prev) => ({ ...prev, phone: '' }))
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="login-error-slot">
-                  {errors.phone && <p className="login-error-text">{errors.phone}</p>}
-                </div>
-              </div>
-            )}
+            </div>
 
             <div className="login-form-field">
               <label className="login-label">
