@@ -63,7 +63,7 @@ const CROP_VIEW_SIZE = 360
 const FRAME_MAX = CROP_VIEW_SIZE - CROP_SIZE
 
 const AdminSystem: React.FC = () => {
-  const [config, setConfig] = useState<Config>({ receiveAddress: '', receiveQrUrl: '' })
+  const [, setConfig] = useState<Config>({ receiveAddress: '', receiveQrUrl: '' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   // USDT‑TRC20
