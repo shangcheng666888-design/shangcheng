@@ -9267,6 +9267,23 @@ button {
   background: #1f2937;
 }
 
+.account-settings-cancel {
+  margin-top: 0.5rem;
+  width: 100%;
+  max-width: 320px;
+  border-radius: 0.35rem;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.2rem;
+  cursor: pointer;
+}
+
+.account-settings-cancel:hover {
+  background: #f9fafb;
+}
+
 .account-panel {
   background: #ffffff;
   border-radius: 0.25rem;
