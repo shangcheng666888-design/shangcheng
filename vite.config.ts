@@ -7,11 +7,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // recharts 与 react 同批加载，避免生产环境 "Cannot set properties of undefined (setting 'Activity')"
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router') || id.includes('node_modules/recharts')) return 'react-vendor'
-          if (id.includes('node_modules')) return 'vendor'
-        },
+        // 不手动拆包，避免 React 的 exports.Activity 在 chunk 中为 undefined 导致白屏
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
