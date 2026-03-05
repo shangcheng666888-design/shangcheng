@@ -342,6 +342,7 @@ const AccountCenter: React.FC = () => {
             createdAt: string
             orderNo?: string
             rechargeTxNo?: string | null
+            rechargeScreenshotUrl?: string | null
             withdrawAddress?: string | null
           }>
         }>(`/api/users/${authUser.id}/fund-applications?pageSize=100`)
@@ -366,6 +367,7 @@ const AccountCenter: React.FC = () => {
               actualAmount: r.status === 'approved' ? String(r.amount) : '—',
               address: '1231231231231',
               transactionNo: r.rechargeTxNo && r.rechargeTxNo.trim() ? r.rechargeTxNo : '—',
+              rechargeScreenshotUrl: r.rechargeScreenshotUrl ?? null,
             }))
           const withdraw: WalletWithdrawRecord[] = list
             .filter((r) => r.type === 'withdraw')
@@ -710,7 +712,7 @@ const AccountCenter: React.FC = () => {
                         <span>{lang === 'zh' ? '充值金额' : 'Recharge amount'}</span>
                         <span>{lang === 'zh' ? '币种/协议' : 'Currency / protocol'}</span>
                         <span>{lang === 'zh' ? '订单状态' : 'Status'}</span>
-                        <span>{lang === 'zh' ? '交易号' : 'Transaction No.'}</span>
+                        <span>{lang === 'zh' ? '交易截图' : 'Screenshot'}</span>
                         <span>{lang === 'zh' ? '实际到账' : 'Received amount'}</span>
                         <span>{lang === 'zh' ? '充值地址' : 'Recharge address'}</span>
                       </div>
@@ -739,7 +741,15 @@ const AccountCenter: React.FC = () => {
                                       failed: 'Failed',
                                     }[r.status] ?? r.status)}
                               </span>
-                              <span>{r.transactionNo ?? '—'}</span>
+                              <span>
+                                {r.rechargeScreenshotUrl ? (
+                                  <a href={r.rechargeScreenshotUrl} target="_blank" rel="noopener noreferrer" className="account-wallet-screenshot-link" title={lang === 'zh' ? '查看大图' : 'View'}>
+                                    <img src={r.rechargeScreenshotUrl} alt="" className="account-wallet-screenshot-thumb" />
+                                  </a>
+                                ) : (
+                                  r.transactionNo ?? '—'
+                                )}
+                              </span>
                               <span>{r.actualAmount}</span>
                               <span>{r.address}</span>
                             </div>

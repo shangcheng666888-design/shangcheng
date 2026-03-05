@@ -17,6 +17,7 @@ interface PendingShopFund {
   applyTime: string
   status: FundStatus
   rechargeTxNo?: string | null
+  rechargeScreenshotUrl?: string | null
   withdrawAddress?: string | null
 }
 
@@ -76,6 +77,7 @@ const AdminAuditShopFunds: React.FC = () => {
             createdAt: string
             orderNo?: string
             rechargeTxNo?: string | null
+            rechargeScreenshotUrl?: string | null
             withdrawAddress?: string | null
           }>
           total: number
@@ -93,6 +95,7 @@ const AdminAuditShopFunds: React.FC = () => {
             (row.status === 'approved' || row.status === 'rejected' ? row.status : 'pending') as FundStatus,
           applyTime: formatApplyTime(row.createdAt),
           rechargeTxNo: row.rechargeTxNo ?? null,
+          rechargeScreenshotUrl: row.rechargeScreenshotUrl ?? null,
           withdrawAddress: row.withdrawAddress ?? null,
         }))
         setRechargeList(items)
@@ -263,7 +266,7 @@ const AdminAuditShopFunds: React.FC = () => {
                 <th>充值金额（USDT）</th>
                 <th>充值地址</th>
                 <th>状态</th>
-                <th>交易号</th>
+                <th>交易截图</th>
                 <th>提交时间</th>
                 <th>操作</th>
               </tr>
@@ -304,7 +307,15 @@ const AdminAuditShopFunds: React.FC = () => {
                           : '待审核'}
                       </span>
                     </td>
-                    <td>{row.rechargeTxNo && row.rechargeTxNo.trim() ? row.rechargeTxNo : '—'}</td>
+                    <td className="admin-audit-screenshot-cell">
+                      {row.rechargeScreenshotUrl ? (
+                        <a href={row.rechargeScreenshotUrl} target="_blank" rel="noopener noreferrer" className="admin-audit-screenshot-link" title="查看大图">
+                          <img src={row.rechargeScreenshotUrl} alt="" className="admin-audit-screenshot-thumb" />
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td>{row.applyTime}</td>
                     <td>
                       {row.status === 'pending' ? (

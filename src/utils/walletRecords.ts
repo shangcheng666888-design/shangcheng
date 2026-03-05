@@ -10,8 +10,10 @@ export type WalletRechargeRecord = {
   status: 'pending' | 'approved' | 'rejected' | 'completed' | 'failed'
   actualAmount: string
   address: string
-  /** 交易号 */
+  /** 交易号（旧） */
   transactionNo?: string
+  /** 交易截图 URL */
+  rechargeScreenshotUrl?: string | null
 }
 
 /** 提现记录 */

@@ -8275,6 +8275,23 @@ button {
   grid-template-columns: 132px 110px 88px 72px 1fr 76px;
 }
 
+.account-wallet-screenshot-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.account-wallet-screenshot-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  display: block;
+}
+.account-wallet-screenshot-link:hover .account-wallet-screenshot-thumb {
+  border-color: #3b82f6;
+}
+
 /* 交易密码弹窗（仪表盘充值） */
 .account-tradepwd-overlay {
   position: fixed;
@@ -9007,6 +9024,59 @@ button {
   font-size: 0.85rem;
   color: #9ca3af;
   padding-left: 4px;
+}
+
+/* 充值页：交易截图上传（正方形+相机图标） */
+.wallet-recharge-screenshot-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 140px;
+  height: 140px;
+  padding: 0.75rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  box-sizing: border-box;
+}
+.wallet-recharge-screenshot-area:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+.wallet-recharge-screenshot-area:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+.wallet-recharge-screenshot-camera {
+  width: 44px;
+  height: 44px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+.wallet-recharge-screenshot-area:hover .wallet-recharge-screenshot-camera {
+  color: #3b82f6;
+}
+.wallet-recharge-screenshot-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+  flex: 1;
+  min-height: 0;
+}
+.wallet-recharge-screenshot-text,
+.wallet-recharge-screenshot-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+.wallet-recharge-screenshot-loading {
+  font-size: 0.85rem;
+  color: #6b7280;
 }
 
 .wallet-recharge-submit {
@@ -15199,6 +15269,26 @@ button {
   padding: 0.85rem 1rem;
   border-bottom: 1px solid #f3f4f6;
   color: #111827;
+}
+
+.admin-audit-screenshot-cell {
+  vertical-align: middle;
+}
+.admin-audit-screenshot-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.admin-audit-screenshot-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  display: block;
+}
+.admin-audit-screenshot-link:hover .admin-audit-screenshot-thumb {
+  border-color: #3b82f6;
 }
 
 .admin-audit-table--shops th:first-child,

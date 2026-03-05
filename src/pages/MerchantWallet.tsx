@@ -107,6 +107,7 @@ const MerchantWallet: React.FC = () => {
             status: 'pending' | 'approved' | 'rejected'
             createdAt: string
             rechargeTxNo?: string | null
+            rechargeScreenshotUrl?: string | null
             withdrawAddress?: string | null
           }>
         }>(
@@ -126,6 +127,7 @@ const MerchantWallet: React.FC = () => {
             protocol: 'USDT-TRC20',
             status: r.status,
             transactionNo: r.rechargeTxNo ?? undefined,
+            rechargeScreenshotUrl: r.rechargeScreenshotUrl ?? null,
             actualAmount: r.status === 'approved' ? String(Number(r.amount ?? 0).toFixed(2)) : '—',
             address: depositAddr || '—',
           }))
@@ -250,7 +252,7 @@ const MerchantWallet: React.FC = () => {
                     <span>{lang === 'zh' ? '充值金额' : 'Recharge amount'}</span>
                     <span>{lang === 'zh' ? '币种/协议' : 'Currency / protocol'}</span>
                     <span>{lang === 'zh' ? '订单状态' : 'Status'}</span>
-                    <span>{lang === 'zh' ? '交易号' : 'Transaction No.'}</span>
+                    <span>{lang === 'zh' ? '交易截图' : 'Screenshot'}</span>
                     <span>{lang === 'zh' ? '实际到账' : 'Received amount'}</span>
                     <span>{lang === 'zh' ? '充值地址' : 'Recharge address'}</span>
                   </div>
@@ -279,7 +281,15 @@ const MerchantWallet: React.FC = () => {
                                   failed: 'Failed',
                                 }[r.status] ?? r.status)}
                           </span>
-                          <span>{r.transactionNo ?? '—'}</span>
+                          <span>
+                            {r.rechargeScreenshotUrl ? (
+                              <a href={r.rechargeScreenshotUrl} target="_blank" rel="noopener noreferrer" className="account-wallet-screenshot-link" title={lang === 'zh' ? '查看大图' : 'View'}>
+                                <img src={r.rechargeScreenshotUrl} alt="" className="account-wallet-screenshot-thumb" />
+                              </a>
+                            ) : (
+                              r.transactionNo ?? '—'
+                            )}
+                          </span>
                           <span>{r.actualAmount}</span>
                           <span>{r.address}</span>
                         </div>

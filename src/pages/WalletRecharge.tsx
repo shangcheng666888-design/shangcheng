@@ -28,7 +28,9 @@ const WalletRecharge: React.FC = () => {
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState<'USDT' | 'BTC' | 'ETH'>('USDT')
   const [network, setNetwork] = useState<'ETH' | 'BTC' | 'TRC20'>('TRC20')
-  const [transactionNo, setTransactionNo] = useState('')
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null)
+  const [screenshotUploading, setScreenshotUploading] = useState(false)
+  const screenshotInputRef = useRef<HTMLInputElement>(null)
   const { showToast } = useToast()
   const [tradePwdModalOpen, setTradePwdModalOpen] = useState(false)
   const [tradePwd, setTradePwd] = useState('')
@@ -82,7 +84,7 @@ const WalletRecharge: React.FC = () => {
   const tradePwdChars = tradePwd.padEnd(6, ' ').slice(0, 6).split('')
   const amountNum = parseFloat(amount)
   const isAmountFilled = amount.trim() !== '' && !Number.isNaN(amountNum) && amountNum > 0
-  const submitDisabled = !isAmountFilled || !transactionNo.trim()
+  const submitDisabled = !isAmountFilled || !screenshotUrl
   const confirmPwdDisabled = tradePwd.length < 6
 
   const handleTradePwdChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -330,17 +332,53 @@ const WalletRecharge: React.FC = () => {
               <div className="wallet-recharge-field">
                 <label className="wallet-recharge-label">
                   <span className="wallet-recharge-required">*</span>
-                  {lang === 'zh' ? '交易号' : 'Transaction ID'}
+                  {lang === 'zh' ? '交易截图' : 'Transaction screenshot'}
                 </label>
-                <div className="wallet-recharge-address-row">
-                  <input
-                    className="wallet-recharge-address-input"
-                    placeholder={
-                      lang === 'zh' ? '请输入交易号' : 'Please enter the transaction ID'
+                <input
+                  ref={screenshotInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="wallet-recharge-upload-input"
+                  aria-label={lang === 'zh' ? '上传交易截图' : 'Upload transaction screenshot'}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setScreenshotUploading(true)
+                    try {
+                      const { url } = await api.uploadImage(file)
+                      setScreenshotUrl(url)
+                    } catch (err) {
+                      showToast(err instanceof Error ? err.message : (lang === 'zh' ? '上传失败' : 'Upload failed'), 'error')
+                    } finally {
+                      setScreenshotUploading(false)
+                      e.target.value = ''
                     }
-                    value={transactionNo}
-                    onChange={(e) => setTransactionNo(e.target.value)}
-                  />
+                  }}
+                />
+                <div
+                  className="wallet-recharge-screenshot-area"
+                  onClick={() => !screenshotUploading && screenshotInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && screenshotInputRef.current?.click()}
+                  aria-label={lang === 'zh' ? '上传交易截图' : 'Upload transaction screenshot'}
+                >
+                  {screenshotUploading ? (
+                    <span className="wallet-recharge-screenshot-loading">{lang === 'zh' ? '上传中…' : 'Uploading…'}</span>
+                  ) : screenshotUrl ? (
+                    <>
+                      <img src={screenshotUrl} alt="" className="wallet-recharge-screenshot-preview" />
+                      <span className="wallet-recharge-screenshot-label">{lang === 'zh' ? '点击可重新上传' : 'Click to replace'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="wallet-recharge-screenshot-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                      </svg>
+                      <span className="wallet-recharge-screenshot-text">{lang === 'zh' ? '点击上传' : 'Click to upload'}</span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -418,16 +456,20 @@ const WalletRecharge: React.FC = () => {
                         )
                         return
                       }
+                      if (!screenshotUrl) {
+                        showToast(lang === 'zh' ? '请上传交易截图' : 'Please upload transaction screenshot', 'error')
+                        return
+                      }
                       try {
                         await api.post(`/api/users/${encodeURIComponent(uid)}/recharge`, {
                           amount: amountValue,
                           tradePassword: tradePwd,
-                          transactionNo,
+                          rechargeScreenshotUrl: screenshotUrl,
                         })
                         setTradePwdModalOpen(false)
                         setTradePwd('')
                         setAmount('')
-                        setTransactionNo('')
+                        setScreenshotUrl(null)
                         showToast(lang === 'zh' ? '提交成功' : 'Submitted successfully')
                         goBack()
                       } catch (err: unknown) {
