@@ -95,17 +95,10 @@ const AdminShops: React.FC = () => {
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVisible)
     }
-    const timer = window.setInterval(() => {
-      // 静默轮询：仅在页面可见且未打开详情/编辑时后台刷新
-      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
-      if (detailShop || editForm) return
-      void fetchShops('silent')
-    }, 10000)
     return () => {
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible)
-      window.clearInterval(timer)
     }
-  }, [detailShop, editForm, fetchShops])
+  }, [fetchShops])
 
   const filtered = useMemo(() => {
     let list = shops
