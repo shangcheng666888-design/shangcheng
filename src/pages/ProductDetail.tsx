@@ -8,7 +8,7 @@ import AddToCartSuccessModal from '../components/AddToCartSuccessModal'
 import { useToast } from '../components/ToastProvider'
 import { api } from '../api/client'
 import { getCategoryNameZh } from '../constants/categoryNameZh'
-import { formatSkuAttrsDisplay, getAttrOptionsFromSkus, findSkuByAttrs } from '../constants/skuAttrDisplay'
+import { formatSkuAttrsDisplay, getAttrOptionsFromSkus, findSkuByAttrs, getSkuAttrEntries } from '../constants/skuAttrDisplay'
 import SkuAttrSelect from '../components/SkuAttrSelect'
 import { useLang } from '../context/LangContext'
 import { sanitizeHtml } from '../utils/sanitizeHtml'
@@ -107,12 +107,18 @@ const ProductDetail: React.FC = () => {
           : (res as { image?: string }).image
             ? [(res as { image: string }).image]
             : []
+        const skus = Array.isArray((res as { skus?: unknown[] }).skus) ? (res as { skus: ListingSku[] }).skus : []
         setListing({
           ...res,
           images: mainImages.length > 0 ? mainImages : (res as { image?: string }).image ? [(res as { image: string }).image] : [],
-          skus: Array.isArray((res as { skus?: unknown[] }).skus) ? (res as { skus: ListingSku[] }).skus : [],
+          skus,
         })
-        setSelectedSku(null)
+        if (skus.length === 1 && getSkuAttrEntries(skus[0].attrs).length === 0) {
+          const single = skus[0] as ListingSku & { skuId?: string }
+          setSelectedSku({ ...single, sku_id: single.sku_id ?? single.skuId ?? '' })
+        } else {
+          setSelectedSku(null)
+        }
         setSelectedAttrs({})
         const sid = (res as { shopId?: string }).shopId
         if (sid) {
@@ -230,7 +236,8 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = (goCheckout: boolean) => {
     if (!listing) return
-    if (listing.skus && listing.skus.length > 0 && !selectedSku) {
+    const needsSpec = attrSelectors.length > 0 && !selectedSku
+    if (needsSpec) {
       showToast(
         lang === 'zh' ? '请先选择规格' : 'Please select a variant first',
         'error',
