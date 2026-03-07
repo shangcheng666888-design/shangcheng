@@ -70,6 +70,7 @@ const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const [activeImage, setActiveImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
+  const [qtyInputValue, setQtyInputValue] = useState('1')
   const [isGalleryPaused, setIsGalleryPaused] = useState(false)
   const [addSuccessOpen, setAddSuccessOpen] = useState(false)
   const [listing, setListing] = useState<ListingDetail | null>(null)
@@ -210,9 +211,21 @@ const ProductDetail: React.FC = () => {
 
   const handleQuantityChange = (type: 'dec' | 'inc') => {
     setQuantity((q) => {
-      if (type === 'dec') return Math.max(1, q - 1)
-      return q + 1
+      const next = type === 'dec' ? Math.max(1, q - 1) : q + 1
+      setQtyInputValue(String(next))
+      return next
     })
+  }
+
+  const handleQtyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value.replace(/\D/g, '')
+    setQtyInputValue(v)
+    const n = v === '' ? 1 : Math.max(1, parseInt(v, 10) || 1)
+    setQuantity(n)
+  }
+
+  const handleQtyInputBlur = () => {
+    setQtyInputValue(String(quantity))
   }
 
   const handleAddToCart = (goCheckout: boolean) => {
@@ -492,7 +505,16 @@ const ProductDetail: React.FC = () => {
               <div className="product-detail-field-value">
                 <div className="product-detail-qty-control">
                   <button type="button" className="product-detail-qty-btn" onClick={() => handleQuantityChange('dec')} disabled={quantity <= 1}>-</button>
-                  <span className="product-detail-qty-value">{quantity}</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    className="product-detail-qty-value product-detail-qty-input"
+                    value={qtyInputValue}
+                    onChange={handleQtyInputChange}
+                    onBlur={handleQtyInputBlur}
+                    min={1}
+                    aria-label={lang === 'zh' ? '数量' : 'Quantity'}
+                  />
                   <button type="button" className="product-detail-qty-btn" onClick={() => handleQuantityChange('inc')}>+</button>
                 </div>
               </div>
