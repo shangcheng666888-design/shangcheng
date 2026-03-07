@@ -20941,14 +20941,6 @@ button {
   font-size: 1rem;
 }
 
-.product-detail-qty-input {
-  border: none;
-  background: transparent;
-  outline: none;
-  padding: 0;
-  box-sizing: content-box;
-}
-
 /* 购物车中的数量样式更紧凑且为黑色元素 */
 .cart-drawer-item .product-detail-qty-control {
   border: none;

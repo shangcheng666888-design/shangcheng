@@ -508,7 +508,8 @@ const ProductDetail: React.FC = () => {
                   <input
                     type="text"
                     inputMode="numeric"
-                    className="product-detail-qty-value product-detail-qty-input"
+                    className="product-detail-qty-value"
+                    style={{ border: 'none', background: 'transparent', outline: 'none', padding: 0 }}
                     value={qtyInputValue}
                     onChange={handleQtyInputChange}
                     onBlur={handleQtyInputBlur}
