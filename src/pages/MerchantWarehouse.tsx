@@ -1117,10 +1117,6 @@ const MerchantWarehouse: React.FC = () => {
                             {lang === 'zh' ? '采购价' : 'Purchase price'} $
                             {item.supplyPrice.toFixed(2)}
                           </span>
-                          <span>
-                            {lang === 'zh' ? '建议售价' : 'Suggested price'} $
-                            {item.suggestedPrice.toFixed(2)}
-                          </span>
                         </div>
                           {item.status === 'off' ? (
                             <div className="merchant-warehouse-procure-disabled-badge">
