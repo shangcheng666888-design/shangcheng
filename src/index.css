@@ -12768,12 +12768,14 @@ button {
   color: #374151;
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
 }
 
 .admin-shops-table td {
   padding: 0.85rem 1rem;
   border-bottom: 1px solid #f3f4f6;
   color: #111827;
+  white-space: nowrap;
 }
 
 .admin-shops-table tbody tr:last-child td {
@@ -12858,6 +12860,7 @@ button {
   font-weight: 500;
   color: #111827;
   text-decoration: underline;
+  white-space: nowrap;
 }
 
 .admin-shops-action:hover {
