@@ -28,6 +28,10 @@ interface Shop {
   walletBalance: number
   /** 店铺访问量 */
   visits: number
+  /** 最近一次登录所在国家（根据 IP 粗略解析，仅供参考） */
+  lastLoginCountry?: string | null
+  /** 最近一次登录 IP（仅后台展示，不在 UI 中暴露给前台用户） */
+  lastLoginIp?: string | null
   status: ShopStatus
   /** 开通时间 */
   createdAt: string
@@ -452,6 +456,10 @@ const AdminShops: React.FC = () => {
                   <div className="admin-shops-detail-row">
                     <dt>访问量</dt>
                     <dd>{(displayShop!.visits ?? 0).toLocaleString()}</dd>
+                  </div>
+                  <div className="admin-shops-detail-row">
+                    <dt>最近登录国家</dt>
+                    <dd>{displayShop!.lastLoginCountry || '—'}</dd>
                   </div>
                   <div className="admin-shops-detail-row">
                     <dt>状态</dt>
