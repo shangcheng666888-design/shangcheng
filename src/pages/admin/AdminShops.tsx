@@ -37,6 +37,24 @@ interface Shop {
   createdAt: string
 }
 
+function formatDateTimeLocal(value: string): string {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return value
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(d)
+  } catch {
+    return value
+  }
+}
+
 const PAGE_SIZE = 30
 
 const STATUS_LABEL: Record<ShopStatus, string> = {
@@ -288,7 +306,7 @@ const AdminShops: React.FC = () => {
                       {STATUS_LABEL[s.status]}
                     </span>
                   </td>
-                  <td>{s.createdAt}</td>
+                  <td>{formatDateTimeLocal(s.createdAt)}</td>
                   <td>
                     <button type="button" className="admin-shops-action" onClick={() => openDetail(s)}>查看详情</button>
                   </td>
@@ -475,7 +493,7 @@ const AdminShops: React.FC = () => {
                   </div>
                   <div className="admin-shops-detail-row">
                     <dt>开通时间</dt>
-                    <dd>{displayShop!.createdAt}</dd>
+                    <dd>{formatDateTimeLocal(displayShop!.createdAt)}</dd>
                   </div>
                 </dl>
               )}
