@@ -192,9 +192,8 @@ const ProductDetail: React.FC = () => {
   }, [selectedSku?.sku_id])
 
   const unitPrice = (() => {
-    const sp = toPrice(selectedSku?.selling_price)
-    const lp = toPrice(listing?.price)
-    return sp > 0 ? sp : lp
+    // 始终以当前上架记录的店铺售价为准，规格切换不改变店铺定价
+    return toPrice(listing?.price)
   })()
 
   useEffect(() => {
