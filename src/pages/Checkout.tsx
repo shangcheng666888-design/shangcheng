@@ -265,7 +265,7 @@ const Checkout: React.FC = () => {
 
   const balanceInsufficient = total > balance
   const canSubmit =
-    items.length > 0 &&
+    itemsToCheckout.length > 0 &&
     selectedAddress !== null &&
     !(paymentMethod === 'balance' && balanceInsufficient)
 
