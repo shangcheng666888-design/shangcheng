@@ -165,7 +165,9 @@ function apiOrderToAdmin(o: ApiOrder): AdminOrder {
     trackingNo: o.trackingNo,
     items: (o.items ?? []).map((it) => ({
       id: it.id,
-      productCode: (it.productId && String(it.productId).trim()) || extractProductCodeFromItemId(it.id),
+      productCode:
+        (it.productId && String(it.productId).trim()) ||
+        getPureListingId(it.listingId ?? it.id),
       listingId: it.listingId,
       title: it.title,
       price: it.price,
