@@ -12666,8 +12666,9 @@ button {
 
 .admin-shops-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.25rem;
 }
