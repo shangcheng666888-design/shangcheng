@@ -108,11 +108,6 @@ function getPureListingId(id: string | null | undefined): string {
   return s
 }
 
-/** 从订单项 id 中提取商品在店铺内的唯一编号（去掉 SKU 等后缀），内部复用上架号提取逻辑 */
-function extractProductCodeFromItemId(id: string): string {
-  return getPureListingId(id)
-}
-
 function mapApiStatusToAdmin(status: ApiOrderStatus): OrderStatus {
   switch (status) {
     case 'pending':
@@ -145,11 +140,12 @@ function apiOrderToAdmin(o: ApiOrder): AdminOrder {
   const itemCodes = Array.from(
     new Set(
       (o.items ?? [])
-        // 商品仓 ID / 上架号：优先使用 listingId，其次使用原始 id，再退回 productId
+        // 商品仓 ID：优先使用 productId（供货商品 ID），若缺失则退回上架号 / 订单项 id
         .map((i) => {
-          const fromListing = getPureListingId(i.listingId ?? i.id)
-          if (fromListing) return fromListing
-          return i.productId ? String(i.productId).trim() : ''
+          if (i.productId != null && String(i.productId).trim()) {
+            return String(i.productId).trim()
+          }
+          return getPureListingId(i.listingId ?? i.id)
         })
         .map((code) => code.trim())
         .filter((code) => code.length > 0),
