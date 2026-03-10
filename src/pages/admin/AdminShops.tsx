@@ -458,8 +458,12 @@ const AdminShops: React.FC = () => {
                     <dd>{(displayShop!.visits ?? 0).toLocaleString()}</dd>
                   </div>
                   <div className="admin-shops-detail-row">
-                    <dt>最近登录国家</dt>
-                    <dd>{displayShop!.lastLoginCountry || '—'}</dd>
+                    <dt>最近登录</dt>
+                    <dd>
+                      {displayShop!.lastLoginIp
+                        ? `${displayShop!.lastLoginIp}（国家：${displayShop!.lastLoginCountry || '未知'}）`
+                        : '—'}
+                    </dd>
                   </div>
                   <div className="admin-shops-detail-row">
                     <dt>状态</dt>
