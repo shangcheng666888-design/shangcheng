@@ -6,63 +6,15 @@ import { useToast } from '../components/ToastProvider'
 import AddressModal from '../components/AddressModal'
 import type { AddressItem } from '../utils/addressList'
 import {
-  createOrder,
   updateOrderStatus,
   getOrderById,
-  type OrderItemSnapshot,
   type OrderAddressSnapshot,
 } from '../utils/orderList'
 import { api } from '../api/client'
 import { COUNTRY_OPTIONS } from '../constants/countries'
 import { getRegions, getCities } from '../constants/countryRegions'
 import walletIcon from '../assets/qianbao.png'
-import mastercardIcon from '../assets/mastercard-icon.png'
-import visaIcon from '../assets/visa-icon.png'
-import paypalIcon from '../assets/paypal-icon.png'
-import unionpayIcon from '../assets/unionpay-icon.png'
 import { useLang } from '../context/LangContext'
-
-const BOUND_CARDS_KEY = 'checkoutBoundCards'
-
-type CardPaymentMethod = 'visa' | 'mastercard'
-
-/** 根据卡号前几位识别：Visa / Mastercard / 不支持 / 尚未识别 */
-function checkCardBrand(cardNumber: string): 'visa' | 'mastercard' | 'unsupported' | null {
-  const digits = cardNumber.replace(/\D/g, '')
-  if (digits.length < 1) return null
-  if (digits[0] === '4') return 'visa'
-  if (digits.length >= 2) {
-    const n2 = parseInt(digits.slice(0, 2), 10)
-    if (n2 >= 51 && n2 <= 55) return 'mastercard'
-    if (digits[0] === '5') return 'unsupported' // 50, 56-59
-  }
-  if (digits.length >= 4) {
-    const n4 = parseInt(digits.slice(0, 4), 10)
-    if (n4 >= 2221 && n4 <= 2720) return 'mastercard'
-    if (digits.slice(0, 2) === '22') return 'unsupported' // 22xx 且不在 2221-2720
-  }
-  if (digits[0] === '3' || digits[0] === '6' || digits[0] === '7' || digits[0] === '8' || digits[0] === '9' || digits[0] === '1') return 'unsupported'
-  if (digits.length >= 1 && digits[0] === '2' && digits.length < 4) return null
-  if (digits.length >= 1 && digits[0] === '5' && digits.length < 2) return null
-  return null
-}
-
-function loadBoundCards(): Partial<Record<CardPaymentMethod, string>> {
-  try {
-    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(BOUND_CARDS_KEY) : null
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as Partial<Record<CardPaymentMethod, string>>
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-function saveBoundCards(cards: Partial<Record<CardPaymentMethod, string>>) {
-  try {
-    window.localStorage.setItem(BOUND_CARDS_KEY, JSON.stringify(cards))
-  } catch {}
-}
 
 function getCountryLabel(code: string) {
   return COUNTRY_OPTIONS.find((c) => c.value === code)?.label ?? code
@@ -148,17 +100,9 @@ const Checkout: React.FC = () => {
   const [addressList, setAddressList] = useState<AddressItem[]>([])
   const [selectedAddress, setSelectedAddress] = useState<AddressItem | null>(null)
   const [addressModalOpen, setAddressModalOpen] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<'balance' | 'visa' | 'mastercard'>('balance')
   const [submitting, setSubmitting] = useState(false)
-  const [bindCardModalOpen, setBindCardModalOpen] = useState(false)
-  const [bindCardNo, setBindCardNo] = useState('')
-  const [bindCardExpiry, setBindCardExpiry] = useState('')
-  const [bindCardCvv, setBindCardCvv] = useState('')
-  const [bindCardName, setBindCardName] = useState('')
-  const [boundCards, setBoundCards] = useState<Partial<Record<CardPaymentMethod, string>>>(() => loadBoundCards())
   const [addAddressModalOpen, setAddAddressModalOpen] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
-  const [submitFailed, setSubmitFailed] = useState(false)
   const [successOrderNumber, setSuccessOrderNumber] = useState('')
   const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const initialAuth = getInitialAuth()
@@ -175,11 +119,11 @@ const Checkout: React.FC = () => {
   }, [userId, navigate, location.state])
 
   useEffect(() => {
-    if (submitSuccess || submitFailed) {
+    if (submitSuccess) {
       document.getElementById('root')?.scrollTo({ top: 0, behavior: 'smooth' })
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
-  }, [submitSuccess, submitFailed])
+  }, [submitSuccess])
 
   const [directCheckoutItems, setDirectCheckoutItems] = useState<CartItem[]>(() => directItems ?? [])
   useEffect(() => {
@@ -267,22 +211,7 @@ const Checkout: React.FC = () => {
   const canSubmit =
     itemsToCheckout.length > 0 &&
     selectedAddress !== null &&
-    !(paymentMethod === 'balance' && balanceInsufficient)
-
-  const isCardPayment = paymentMethod !== 'balance'
-  const regionRestrictedMsg =
-    lang === 'zh'
-      ? '该支付方式并未对您所在的地区开放'
-      : 'This payment method is not available in your region'
-  const detectedCardBrand = checkCardBrand(bindCardNo)
-  const showCardIcon = detectedCardBrand === 'visa' || detectedCardBrand === 'mastercard'
-
-  // 若当前支付方式为余额且余额不足，自动切换为 Visa，避免用户提交时报错
-  useEffect(() => {
-    if (balanceInsufficient && paymentMethod === 'balance') {
-      setPaymentMethod('visa')
-    }
-  }, [balanceInsufficient, paymentMethod])
+    !balanceInsufficient
 
   const handleSubmit = async () => {
     if (itemsToCheckout.length === 0) {
@@ -296,11 +225,11 @@ const Checkout: React.FC = () => {
       )
       return
     }
-    if (paymentMethod === 'balance' && balanceInsufficient) {
+    if (balanceInsufficient) {
       showToast(
         lang === 'zh'
-          ? '余额不足，请更换支付方式'
-          : 'Insufficient balance, please choose another payment method',
+          ? '余额不足，请先充值'
+          : 'Insufficient balance, please recharge first',
         'error',
       )
       return
@@ -308,28 +237,6 @@ const Checkout: React.FC = () => {
     if (submitting) return
     const addressSnapshot = toAddressSnapshot(selectedAddress)
     const isPayingOrder = !!orderIdFromUrl
-
-    if (isCardPayment) {
-      const cardKey = paymentMethod as CardPaymentMethod
-      if (!boundCards[cardKey]) {
-        setBindCardModalOpen(true)
-        return
-      }
-      if (!isPayingOrder) {
-        createOrder({
-          items: itemsToCheckout as OrderItemSnapshot[],
-          address: addressSnapshot,
-          total,
-        })
-      }
-      setSubmitting(true)
-      submitTimeoutRef.current = setTimeout(() => {
-        submitTimeoutRef.current = null
-        setSubmitting(false)
-        setSubmitFailed(true)
-      }, 4500)
-      return
-    }
 
     if (isPayingOrder) {
       const order = getOrderById(orderIdFromUrl!)
@@ -437,60 +344,6 @@ const Checkout: React.FC = () => {
     setSubmitting(false)
   }
 
-  const handleChangePaymentAndRetry = () => {
-    setSubmitFailed(false)
-    requestAnimationFrame(() => {
-      document.getElementById('checkout-payment-section')?.scrollIntoView({ behavior: 'smooth' })
-    })
-  }
-
-  const handleBindCardConfirm = () => {
-    const no = bindCardNo.trim().replace(/\s/g, '')
-    const expiry = bindCardExpiry.trim()
-    const cvv = bindCardCvv.trim()
-    const name = bindCardName.trim()
-    if (!no) {
-      showToast(lang === 'zh' ? '请输入卡号' : 'Please enter card number', 'error')
-      return
-    }
-    const brand = checkCardBrand(no)
-    if (brand !== 'visa' && brand !== 'mastercard') {
-      showToast(
-        lang === 'zh'
-          ? '不支持该卡，仅支持 Visa 与万事达'
-          : 'This card is not supported, only Visa and Mastercard are accepted',
-        'error',
-      )
-      return
-    }
-    if (!expiry) {
-      showToast(lang === 'zh' ? '请输入有效期' : 'Please enter expiry date', 'error')
-      return
-    }
-    if (!cvv) {
-      showToast(lang === 'zh' ? '请输入安全码' : 'Please enter security code', 'error')
-      return
-    }
-    if (!name) {
-      showToast(
-        lang === 'zh' ? '请输入持卡人姓名' : 'Please enter cardholder name',
-        'error',
-      )
-      return
-    }
-    const last4 = no.replace(/\D/g, '').slice(-4)
-    const cardKey = brand
-    const next = { ...boundCards, [cardKey]: last4 }
-    setBoundCards(next)
-    saveBoundCards(next)
-    setBindCardModalOpen(false)
-    setBindCardNo('')
-    setBindCardExpiry('')
-    setBindCardCvv('')
-    setBindCardName('')
-    showToast(lang === 'zh' ? '绑定成功' : 'Card bound successfully')
-  }
-
   if (submitSuccess) {
     return (
       <main className="app-main checkout-page checkout-page--success">
@@ -520,43 +373,6 @@ const Checkout: React.FC = () => {
             </button>
             <Link to="/products" className="checkout-success-btn checkout-success-btn--secondary">
               {lang === 'zh' ? '继续购物' : 'Continue shopping'}
-            </Link>
-          </div>
-        </div>
-      </main>
-    )
-  }
-
-  if (submitFailed) {
-    return (
-      <main className="app-main checkout-page checkout-page--success">
-        <div className="checkout-failed">
-          <div className="checkout-failed-icon" aria-hidden>×</div>
-          <h1 className="checkout-failed-title">
-            {lang === 'zh' ? '订单提交失败' : 'Order submission failed'}
-          </h1>
-          <p className="checkout-failed-desc">
-            {lang === 'zh'
-              ? '支付异常，请联系发卡银行'
-              : 'Payment error, please contact your card issuer.'}
-          </p>
-          <div className="checkout-success-actions">
-            <button
-              type="button"
-              className="checkout-success-btn checkout-success-btn--primary"
-              onClick={handleChangePaymentAndRetry}
-            >
-              {lang === 'zh' ? '更换支付方式' : 'Change payment method'}
-            </button>
-            <button
-              type="button"
-              className="checkout-success-btn checkout-success-btn--secondary"
-              onClick={() => setSubmitFailed(false)}
-            >
-              {lang === 'zh' ? '返回重试' : 'Back and retry'}
-            </button>
-            <Link to="/products" className="checkout-success-btn checkout-success-btn--secondary">
-              {lang === 'zh' ? '返回购物' : 'Back to shopping'}
             </Link>
           </div>
         </div>
@@ -708,136 +524,18 @@ const Checkout: React.FC = () => {
             {lang === 'zh' ? '支付方式' : 'Payment method'}
           </h2>
           <div className="checkout-payment-options">
-            {balanceInsufficient ? (
-              <div
-                className="checkout-payment-option checkout-payment-option--disabled"
-                role="button"
-                tabIndex={0}
-              onClick={() =>
-                showToast(
-                  lang === 'zh'
-                    ? '余额不足，请更换支付方式'
-                    : 'Insufficient balance, please choose another payment method',
-                  'error',
-                )
-              }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    showToast(
-                      lang === 'zh'
-                        ? '余额不足，请更换支付方式'
-                        : 'Insufficient balance, please choose another payment method',
-                      'error',
-                    )
-                  }
-                }}
-                aria-disabled="true"
-              >
-                <span className="checkout-payment-radio checkout-payment-radio--fake" aria-hidden />
-                <span className="checkout-payment-icon checkout-payment-icon--img">
-                  <img src={walletIcon} alt="" />
-                </span>
-                <span className="checkout-payment-label">
-                  {lang === 'zh' ? '余额 ' : 'Balance '}
-                  (${balance.toFixed(2)})
-                  {balanceInsufficient && (
-                    <span className="checkout-payment-region-hint">
-                      {lang === 'zh' ? '余额不足' : 'Insufficient balance'}
-                    </span>
-                  )}
-                </span>
-              </div>
-            ) : (
-              <label className={`checkout-payment-option${paymentMethod === 'balance' ? ' checkout-payment-option--selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="balance"
-                  checked={paymentMethod === 'balance'}
-                  onChange={() => setPaymentMethod('balance')}
-                  className="checkout-payment-radio"
-                />
-                <span className="checkout-payment-icon checkout-payment-icon--img">
-                  <img src={walletIcon} alt="" />
-                </span>
-                <span className="checkout-payment-label">余额 (${balance.toFixed(2)})</span>
-              </label>
-            )}
-            <label className={`checkout-payment-option${paymentMethod === 'visa' ? ' checkout-payment-option--selected' : ''}`}>
-              <input
-                type="radio"
-                name="payment"
-                value="visa"
-                checked={paymentMethod === 'visa'}
-                onChange={() => setPaymentMethod('visa')}
-                className="checkout-payment-radio"
-              />
-              <span className="checkout-payment-icon checkout-payment-icon--img">
-                <img src={visaIcon} alt="" />
-              </span>
-              <span className="checkout-payment-label">
-                Visa{boundCards.visa ? ` **** ${boundCards.visa}` : ''}
-              </span>
-            </label>
-            <label className={`checkout-payment-option${paymentMethod === 'mastercard' ? ' checkout-payment-option--selected' : ''}`}>
-              <input
-                type="radio"
-                name="payment"
-                value="mastercard"
-                checked={paymentMethod === 'mastercard'}
-                onChange={() => setPaymentMethod('mastercard')}
-                className="checkout-payment-radio"
-              />
-              <span className="checkout-payment-icon checkout-payment-icon--img">
-                <img src={mastercardIcon} alt="" />
-              </span>
-              <span className="checkout-payment-label">
-                Mastercard{boundCards.mastercard ? ` **** ${boundCards.mastercard}` : ''}
-              </span>
-            </label>
-            <div
-              className="checkout-payment-option checkout-payment-option--disabled"
-              role="button"
-              tabIndex={0}
-              onClick={() => showToast(regionRestrictedMsg, 'error')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  showToast(regionRestrictedMsg, 'error')
-                }
-              }}
-              aria-disabled="true"
-            >
+            <div className={`checkout-payment-option${balanceInsufficient ? ' checkout-payment-option--disabled' : ' checkout-payment-option--selected'}`} aria-disabled={balanceInsufficient ? 'true' : 'false'}>
               <span className="checkout-payment-radio checkout-payment-radio--fake" aria-hidden />
               <span className="checkout-payment-icon checkout-payment-icon--img">
-                <img src={paypalIcon} alt="" />
+                <img src={walletIcon} alt="" />
               </span>
               <span className="checkout-payment-label">
-                PayPal
-                <span className="checkout-payment-region-hint">{regionRestrictedMsg}</span>
-              </span>
-            </div>
-            <div
-              className="checkout-payment-option checkout-payment-option--disabled"
-              role="button"
-              tabIndex={0}
-              onClick={() => showToast(regionRestrictedMsg, 'error')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  showToast(regionRestrictedMsg, 'error')
-                }
-              }}
-              aria-disabled="true"
-            >
-              <span className="checkout-payment-radio checkout-payment-radio--fake" aria-hidden />
-              <span className="checkout-payment-icon checkout-payment-icon--img">
-                <img src={unionpayIcon} alt="" />
-              </span>
-              <span className="checkout-payment-label">
-                银联
-                <span className="checkout-payment-region-hint">{regionRestrictedMsg}</span>
+                {lang === 'zh' ? '余额' : 'Balance'} (${balance.toFixed(2)})
+                {balanceInsufficient && (
+                  <span className="checkout-payment-region-hint">
+                    {lang === 'zh' ? '余额不足' : 'Insufficient balance'}
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -898,135 +596,6 @@ const Checkout: React.FC = () => {
               >
               {lang === 'zh' ? '取消' : 'Cancel'}
             </button>
-          </div>
-        </div>
-      )}
-
-      {bindCardModalOpen && (
-        <div
-          className="checkout-address-modal-overlay checkout-bindcard-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="checkout-bindcard-modal-title"
-          onClick={() => setBindCardModalOpen(false)}
-        >
-          <div className="checkout-bindcard-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="checkout-address-modal-header">
-              <h2 id="checkout-bindcard-modal-title">
-                {lang === 'zh' ? '银行卡支付' : 'Pay with bank card'}
-              </h2>
-              <button
-                type="button"
-                className="checkout-address-modal-close"
-                aria-label={lang === 'zh' ? '关闭' : 'Close'}
-                onClick={() => setBindCardModalOpen(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="checkout-bindcard-body">
-              <div className="checkout-bindcard-field">
-                <label className="checkout-bindcard-label">
-                  {lang === 'zh' ? '卡号' : 'Card number'}
-                </label>
-                <div className="checkout-bindcard-input-wrap">
-                  <input
-                    type="text"
-                    className={`checkout-bindcard-input${
-                      showCardIcon ? ' checkout-bindcard-input--has-icon' : ''
-                    }`}
-                    placeholder={
-                      lang === 'zh' ? '请输入卡号' : 'Please enter card number'
-                    }
-                    value={bindCardNo}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      setBindCardNo(v)
-                      const result = checkCardBrand(v)
-                      if (result === 'visa' || result === 'mastercard')
-                        setPaymentMethod(result)
-                      if (result === 'unsupported')
-                        showToast(
-                          lang === 'zh'
-                            ? '不支持该卡，仅支持 Visa 与万事达'
-                            : 'This card is not supported. Only Visa and Mastercard are supported.',
-                          'error',
-                        )
-                    }}
-                    maxLength={19}
-                  />
-                  {showCardIcon && (
-                    <span className="checkout-bindcard-card-icon" aria-hidden>
-                      {detectedCardBrand === 'visa' ? (
-                        <img src={visaIcon} alt="" />
-                      ) : (
-                        <img src={mastercardIcon} alt="" />
-                      )}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="checkout-bindcard-row">
-                <div className="checkout-bindcard-field">
-                  <label className="checkout-bindcard-label">
-                    {lang === 'zh' ? '有效期' : 'Expiry date'}
-                  </label>
-                  <input
-                    type="text"
-                    className="checkout-bindcard-input"
-                    placeholder="MM/YY"
-                    value={bindCardExpiry}
-                    onChange={(e) => setBindCardExpiry(e.target.value)}
-                    maxLength={5}
-                  />
-                </div>
-                <div className="checkout-bindcard-field">
-                  <label className="checkout-bindcard-label">
-                    {lang === 'zh' ? '安全码' : 'Security code'}
-                  </label>
-                  <input
-                    type="text"
-                    className="checkout-bindcard-input"
-                    placeholder="CVV"
-                    value={bindCardCvv}
-                    onChange={(e) => setBindCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    maxLength={4}
-                  />
-                </div>
-              </div>
-              <div className="checkout-bindcard-field">
-                <label className="checkout-bindcard-label">
-                  {lang === 'zh' ? '持卡人姓名' : 'Cardholder name'}
-                </label>
-                <input
-                  type="text"
-                  className="checkout-bindcard-input"
-                  placeholder={
-                    lang === 'zh'
-                      ? '请输入持卡人姓名'
-                      : 'Please enter cardholder name'
-                  }
-                  value={bindCardName}
-                  onChange={(e) => setBindCardName(e.target.value)}
-                />
-              </div>
-              <div className="checkout-bindcard-actions">
-                <button
-                  type="button"
-                  className="checkout-bindcard-btn checkout-bindcard-btn--cancel"
-                  onClick={() => setBindCardModalOpen(false)}
-                >
-                  {lang === 'zh' ? '取消' : 'Cancel'}
-                </button>
-                <button
-                  type="button"
-                  className="checkout-bindcard-btn checkout-bindcard-btn--confirm"
-                  onClick={handleBindCardConfirm}
-                >
-                  {lang === 'zh' ? '确认绑定' : 'Confirm binding'}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
