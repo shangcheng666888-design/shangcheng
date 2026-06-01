@@ -109,6 +109,7 @@ const MerchantWallet: React.FC = () => {
             rechargeTxNo?: string | null
             rechargeScreenshotUrl?: string | null
             withdrawAddress?: string | null
+            withdrawNetwork?: string | null
           }>
         }>(
           `/api/shops/${encodeURIComponent(currentAuth.shopId)}/fund-applications?userId=${encodeURIComponent(currentAuth.userId)}&pageSize=100`,
@@ -139,6 +140,7 @@ const MerchantWallet: React.FC = () => {
             orderNo: w.orderNo ?? `SWD${String(w.id).padStart(8, '0')}`,
             amount: String(Number(w.amount ?? 0).toFixed(2)),
             currency: 'USDT',
+            protocol: w.withdrawNetwork ? `USDT-${w.withdrawNetwork}` : 'USDT-TRC20',
             address: w.withdrawAddress ?? '—',
             status: w.status,
           }))
@@ -303,7 +305,7 @@ const MerchantWallet: React.FC = () => {
                     <span>{lang === 'zh' ? '日期' : 'Date'}</span>
                     <span>{lang === 'zh' ? '订单号' : 'Order No.'}</span>
                     <span>{lang === 'zh' ? '提现金额' : 'Withdrawal amount'}</span>
-                    <span>{lang === 'zh' ? '币种' : 'Currency'}</span>
+                    <span>{lang === 'zh' ? '币种/协议' : 'Currency / protocol'}</span>
                     <span>{lang === 'zh' ? '提现地址' : 'Withdrawal address'}</span>
                     <span>{lang === 'zh' ? '订单状态' : 'Status'}</span>
                   </div>
@@ -320,7 +322,9 @@ const MerchantWallet: React.FC = () => {
                           <span>{formatRecordDate(w.createdAt)}</span>
                           <span>{w.orderNo}</span>
                           <span>{w.amount}</span>
-                          <span>{w.currency}</span>
+                          <span>
+                            {w.protocol ? w.protocol.replace('USDT-', 'USDT/') : `${w.currency}/TRC20`}
+                          </span>
                           <span>{w.address}</span>
                           <span>
                             {lang === 'zh'

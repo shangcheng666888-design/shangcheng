@@ -23,6 +23,7 @@ export type WalletWithdrawRecord = {
   orderNo: string
   amount: string
   currency: string
+  protocol?: string
   address: string
   status: 'pending' | 'approved' | 'rejected' | 'completed' | 'failed'
 }

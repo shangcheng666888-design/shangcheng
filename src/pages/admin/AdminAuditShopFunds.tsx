@@ -19,6 +19,7 @@ interface PendingShopFund {
   rechargeTxNo?: string | null
   rechargeScreenshotUrl?: string | null
   withdrawAddress?: string | null
+  withdrawNetwork?: string | null
 }
 
 const PAGE_SIZE = 30
@@ -149,6 +150,7 @@ const AdminAuditShopFunds: React.FC = () => {
             orderNo?: string
             rechargeTxNo?: string | null
             withdrawAddress?: string | null
+            withdrawNetwork?: string | null
           }>
           total: number
         }>(`/api/audit/shop-fund-applications?${params.toString()}`)
@@ -166,6 +168,7 @@ const AdminAuditShopFunds: React.FC = () => {
           applyTime: formatApplyTime(row.createdAt),
           rechargeTxNo: row.rechargeTxNo ?? null,
           withdrawAddress: row.withdrawAddress ?? null,
+          withdrawNetwork: row.withdrawNetwork ?? 'TRC20',
         }))
         setWithdrawList(items)
         setWithdrawTotal(res.total ?? items.length)
@@ -377,6 +380,7 @@ const AdminAuditShopFunds: React.FC = () => {
                 <th>店铺</th>
                 <th>店主账号</th>
                 <th>提现金额（USDT）</th>
+                <th>网络</th>
                 <th>提现地址</th>
                 <th>状态</th>
                 <th>提交时间</th>
@@ -386,13 +390,13 @@ const AdminAuditShopFunds: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="admin-audit-empty">
+                  <td colSpan={9} className="admin-audit-empty">
                     加载中…
                   </td>
                 </tr>
               ) : withdrawList.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="admin-audit-empty">
+                  <td colSpan={9} className="admin-audit-empty">
                     暂无数据
                   </td>
                 </tr>
@@ -407,6 +411,7 @@ const AdminAuditShopFunds: React.FC = () => {
                     </td>
                     <td>{row.ownerAccount || '—'}</td>
                     <td className="admin-audit-amount">{row.amount.toFixed(2)}</td>
+                    <td>{row.withdrawNetwork ?? 'TRC20'}</td>
                     <td>{row.withdrawAddress && row.withdrawAddress.trim() ? row.withdrawAddress : '—'}</td>
                     <td>
                       <span className={`admin-audit-status admin-audit-status--${row.status}`}>
@@ -444,7 +449,7 @@ const AdminAuditShopFunds: React.FC = () => {
                 ))
               )}
               <tr>
-                <td colSpan={8} className="admin-audit-pagination-cell">
+                <td colSpan={9} className="admin-audit-pagination-cell">
                   <div className="admin-audit-pagination">
                     <button
                       type="button"

@@ -5,11 +5,14 @@ import { api } from '../api/client'
 import WalletPaymentBadges from '../components/WalletPaymentBadges'
 import { useLang } from '../context/LangContext'
 
+type WithdrawNetwork = 'TRC20' | 'ERC20'
+
 const MerchantWalletWithdraw: React.FC = () => {
   const { lang } = useLang()
   const navigate = useNavigate()
   const goBack = () => navigate('/merchant/wallet')
 
+  const [network, setNetwork] = useState<WithdrawNetwork>('TRC20')
   const [address, setAddress] = useState('')
   const [amount, setAmount] = useState('')
   const [balance, setBalance] = useState(0)
@@ -142,7 +145,19 @@ const MerchantWalletWithdraw: React.FC = () => {
               <label className="wallet-recharge-label">
                 {lang === 'zh' ? '区块链网络' : 'Blockchain network'}
               </label>
-              <button type="button" className="wallet-withdraw-network-btn">TRC20</button>
+              <div className="wallet-withdraw-network-row" role="group" aria-label={lang === 'zh' ? '区块链网络' : 'Blockchain network'}>
+                {(['TRC20', 'ERC20'] as const).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`wallet-withdraw-network-btn${network === n ? ' wallet-withdraw-network-btn--active' : ''}`}
+                    aria-pressed={network === n}
+                    onClick={() => setNetwork(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="wallet-recharge-field merchant-wallet-withdraw-balance-cell">
               <label className="wallet-recharge-label">
@@ -161,9 +176,13 @@ const MerchantWalletWithdraw: React.FC = () => {
                 <input
                   className="wallet-recharge-address-input"
                   placeholder={
-                    lang === 'zh'
-                      ? '请输入提币地址'
-                      : 'Please enter the withdrawal address'
+                    network === 'ERC20'
+                      ? lang === 'zh'
+                        ? '请输入 ERC20 地址（0x 开头）'
+                        : 'ERC20 address (starts with 0x)'
+                      : lang === 'zh'
+                        ? '请输入 TRC20 地址（T 开头）'
+                        : 'TRC20 address (starts with T)'
                   }
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
@@ -301,6 +320,7 @@ const MerchantWalletWithdraw: React.FC = () => {
                       amount: Number(amountNum),
                       tradePassword: tradePwd,
                       address: address.trim(),
+                      network,
                     })
 
                     setTradePwdModalOpen(false)
